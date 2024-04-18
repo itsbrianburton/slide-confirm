@@ -6,6 +6,9 @@ Use case: You have a button that can remotely unlock your front door, but you mo
 
 This is quite rudimentary and was created for my own needs, but I'm happy to share it with the community and incorporate any improvements you want to add through pull requests.
 
+## Screenshot
+![Screenshot](https://github.com/itsbrianburton/slide-confirm/raw/main/img/screenshot.png)
+
 ## Screencast
 https://github.com/itsbrianburton/slide-confirm/assets/29252421/086edb77-23ae-4556-b6ee-6a4669253dd2
 
