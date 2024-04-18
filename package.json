@@ -1,0 +1,28 @@
+{
+	"name": "slide-confirm",
+	"version": "1.0.0",
+	"description": "Custom card for Home Assistant to prevent accidental button presses.",
+	"author": "Brian Burton",
+	"source": "src/index.ts",
+	"module": "dist/slide-confirm.js",
+	"targets": {
+		"module": {
+			"includeNodeModules": true
+		}
+	},
+	"scripts": {
+		"watch": "parcel watch",
+		"build": "parcel build"
+	},
+	"devDependencies": {
+		"@parcel/transformer-inline-string": "^2.8.3",
+		"@parcel/transformer-sass": "^2.12.0",
+		"parcel": "^2.8.3",
+		"sass": "^1.75.0"
+	},
+	"dependencies": {
+		"custom-card-helpers": "^1.9.0",
+		"home-assistant-js-websocket": "^8.0.1",
+		"lit": "^2.7.4"
+	}
+}
