@@ -6,22 +6,25 @@ import { query } from 'lit/decorators/query';
 import { slideConfirmStyles } from './card.styles';
 
 export interface SlideConfirmButtonConfig {
-	name: string,
-	label: string,
-	icon: string,
-	iconConfirmed: string,
-	iconUnconfirmed: string,
-	textConfirmed: string,
-	textUnconfirmed: string,
-	entity: string,
+	name: string;
+	label: string;
+	icon: string;
+	iconConfirmed: string;
+	iconUnconfirmed: string;
+	textConfirmed: string;
+	textUnconfirmed: string;
+	entity: string;
 	confirm_action: {
-		action: string,
-		service: string,
-		target: {
-			entity_id: string,
-		}
-	}
-}
+		action: string;
+		service: string;
+		target?: {
+			entity_id?: string | string[];
+			device_id?: string | string[];
+			area_id?: string | string[];
+		};
+		data?: Record<string, any>;
+	};
+};
 
 export class SlideConfirmButton extends LitElement {
 	@property({ attribute: true })

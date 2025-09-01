@@ -34,11 +34,25 @@ export class SlideConfirmCard extends LitElement {
 		const action = e.detail;
 
 		if (action.action === "call-service") {
-			this._hass.callService(
-				action.service.split('.')[0],
-				action.service.split('.')[1], {
-					entity_id: action.target.entity_id
-				});
+			const [domain, service] = action.service.split(".");
+
+			const serviceData: any = {
+				...action.data,
+			};
+
+			if (action.target?.entity_id) {
+				serviceData.entity_id = action.target.entity_id;
+			}
+
+			if (action.target?.device_id) {
+				serviceData.device_id = action.target.device_id;
+			}
+
+			if (action.target?.area_id) {
+				serviceData.area_id = action.target.area_id;
+			}
+
+			this._hass.callService(domain, service, serviceData);
 		}
 	}
 

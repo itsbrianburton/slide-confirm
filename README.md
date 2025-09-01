@@ -40,6 +40,19 @@ sliders:
       target:
         # Target entity
         entity_id: input_boolean.slide_confirm
+  - name: Front door fingerprint reader
+    icon: mdi:fingerprint
+    textUnconfirmed: Slide to start enrolling
+    textConfirmed: Enroll started!
+    iconUnconfirmed: mdi:lock
+    iconConfirmed: mdi:lock-open
+    confirm_action:
+      action: call-service
+      service: esphome.fingerprint_enroll
+      data:
+        # Service data
+        finger_id: 1
+        num_scans: 5
   - name: Back Door
     textUnconfirmed: Slide to Unlock
     textConfirmed: Door Unlocked!
@@ -49,5 +62,17 @@ sliders:
       action: call-service
       service: input_boolean.turn_on
       target:
-        entity_id: input_boolean.slide_confirm
+        # Target device
+        device_id: device123
+  - name: Garage Doors
+    textUnconfirmed: Slide to Unlock
+    textConfirmed: Doors Unlocked!
+    iconUnconfirmed: mdi:lock
+    iconConfirmed: mdi:lock-open
+    confirm_action:
+      action: call-service
+      service: input_boolean.turn_on
+      target:
+        # Target area
+        area_id: garage
 ```
