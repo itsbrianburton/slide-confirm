@@ -1,5 +1,6 @@
 import { SlideConfirmCard } from "./card";
 import { SlideConfirmButton } from './slide-confirm';
+import { SlideConfirmCardEditor } from "./editor";
 
 declare global {
 	interface Window {
@@ -9,6 +10,7 @@ declare global {
 
 customElements.define("slide-confirm-card", SlideConfirmCard);
 customElements.define("slide-confirm", SlideConfirmButton);
+customElements.define("slide-confirm-editor", SlideConfirmCardEditor);
 
 window.customCards = window.customCards || [];
 window.customCards.push({

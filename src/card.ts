@@ -6,8 +6,8 @@ import { HomeAssistant, LovelaceCardConfig } from 'custom-card-helpers';
 import { SlideConfirmButtonConfig } from './slide-confirm';
 
 interface Config extends LovelaceCardConfig {
-	header: string;
-	entity: string;
+	header?: string;
+	sliders: Array<SlideConfirmButtonConfig>;
 }
 
 export class SlideConfirmCard extends LitElement {
@@ -18,7 +18,7 @@ export class SlideConfirmCard extends LitElement {
 	private _hass;
 
 	setConfig(config: Config) {
-		this._header = config.header === "" ? nothing : config.header;
+		this._header = config.header ? config.header : nothing;
 		this._sliders = config.sliders;
 
 		if (this._hass) {
@@ -59,7 +59,7 @@ export class SlideConfirmCard extends LitElement {
 	render() {
 		let content: TemplateResult = html`
 			${this._sliders.map((slider) =>
-				html`<slide-confirm @call-action=${this._callAction} config="${slider}" />`
+				html`<slide-confirm @call-action=${this._callAction} .config=${slider} />`
 			)}
 		`;
 
@@ -76,8 +76,23 @@ export class SlideConfirmCard extends LitElement {
 
 	static getStubConfig() {
 		return {
-			entity: "input_boolean.slide-confirm",
-			header: ""
+			sliders: [
+				{
+					name: "Front Door",
+					icon: "mdi:door",
+					textUnconfirmed: "Slide to Unlock",
+					textConfirmed: "Door Unlocked!",
+					iconUnconfirmed: "mdi:lock",
+					iconConfirmed: "mdi:lock-open",
+					confirm_action: {
+						action: "call-service",
+						service: "input_boolean.turn_on",
+						target: {
+							entity_id: "input_boolean.slide_confirm",
+						},
+					},
+				},
+			],
 		}
 	}
 }
