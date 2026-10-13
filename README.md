@@ -25,6 +25,7 @@ Each slider supports the following options:
 | `iconUnconfirmed` | string | Yes | Icon displayed on the slider knob |
 | `iconConfirmed` | string | Yes | Icon displayed on the knob after a successful slide |
 | `confirm_action` | object | Yes | The action to perform on confirmation (see below) |
+| `haptic` | boolean | No | Vibrate the device on a successful slide (default `false`). Uses Home Assistant's haptic feedback: the companion app vibrates the device, browsers do so when "Vibrate" is enabled in the user profile |
 
 ### `confirm_action`
 

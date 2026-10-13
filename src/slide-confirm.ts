@@ -13,6 +13,7 @@ export interface SlideConfirmButtonConfig {
 	iconUnconfirmed: string;
 	textConfirmed: string;
 	textUnconfirmed: string;
+	haptic?: boolean;
 	entity: string;
 	confirm_action: {
 		action: string;
@@ -60,6 +61,11 @@ export class SlideConfirmButton extends LitElement {
 					composed: true
 				};
 				this.dispatchEvent(new CustomEvent("call-action", payload));
+			}
+			if (this.config.haptic) {
+				// Home Assistant's own haptic event: the companion app vibrates this device,
+				// browsers use navigator.vibrate when "Vibrate" is enabled in the user profile
+				window.dispatchEvent(new CustomEvent("haptic", { detail: "success" }));
 			}
 
 			setTimeout(() => {
