@@ -42,8 +42,8 @@ export const slideConfirmStyles = css`
     width:50px;
     height:50px;
     border-radius:25px;
-    border: 1px solid var(--switch-unchecked-button-color);
-    background-color: var(--switch-unchecked-button-color);
+    border: 1px solid var(--switch-unchecked-button-color, var(--divider-color));
+    background-color: var(--switch-unchecked-button-color, var(--card-background-color, var(--ha-card-background, #fff)));
     box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 1px -2px, rgba(0, 0, 0, 0.14) 0px 2px 2px 0px, rgba(0, 0, 0, 0.12) 0px 1px 5px 0px;
     box-sizing:border-box;
     text-align:center;
@@ -76,14 +76,14 @@ export const slideConfirmStyles = css`
   }
   
   .slide-confirm.confirmed .slide-confirm-track {
-    background-color: var(--switch-checked-track-color);
+    background-color: var(--switch-checked-track-color, var(--primary-color));
     opacity: 0.54;
   }
   
   .slide-confirm.confirmed .slide-confirm-handle {
-    border: 1px solid var(--switch-checked-button-color);
-    background-color: var(--switch-checked-button-color);
-    color: var(--app-header-text-color);
+    border: 1px solid var(--switch-checked-button-color, var(--primary-color));
+    background-color: var(--switch-checked-button-color, var(--primary-color));
+    color: var(--app-header-text-color, var(--text-primary-color, #fff));
   }
   
   .slide-confirm .unconfirmed {
