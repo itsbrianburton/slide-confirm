@@ -25,6 +25,22 @@ export const slideConfirmStyles = css`
     border-radius: 30px;
   }
 
+  /* grows behind the handle while dragging, so the progress is visible */
+  .slide-confirm-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 50px;
+    background-color: var(--switch-checked-track-color, var(--primary-color));
+    opacity: 0.54;
+    border-radius: 30px;
+    transition: width 300ms;
+  }
+  .slide-confirm-fill.dragging {
+    transition: none;
+  }
+
   .slide-confirm-text{
     display: inline-block;
     position: absolute;
