@@ -39,11 +39,15 @@ export class SlideConfirmButton extends LitElement {
 	@query(".slide-confirm-handle")
 	private _handle;
 
+	@query(".slide-confirm-fill")
+	private _fill;
+
 	static styles: CSSResult = slideConfirmStyles;
 
 	dragStart(e) {
 		if (this._confirmed) return;
 		this._handle.classList.add("dragging");
+		this._fill.classList.add("dragging");
 		this._handle.onpointermove = this.drag.bind(this);
 		this._handle.setPointerCapture(e.pointerId);
 	}
@@ -69,6 +73,8 @@ export class SlideConfirmButton extends LitElement {
 		}
 
 		this._handle.classList.remove("dragging");
+		this._fill.classList.remove("dragging");
+		this._fill.style.width = "";
 		this._handle.onpointermove = null;
 		this._handle.releasePointerCapture(e.pointerId);
 		this._handle.style.transform = `translateX(0)`;
@@ -89,7 +95,9 @@ export class SlideConfirmButton extends LitElement {
 	}
 
 	drag(e) {
-		this._handle.style.transform = `translateX(${this._calculateX(e)}px)`;
+		const x = this._calculateX(e);
+		this._handle.style.transform = `translateX(${x}px)`;
+		this._fill.style.width = `${x + this._handle.clientWidth}px`;
 	}
 
 	render() {
@@ -101,6 +109,7 @@ export class SlideConfirmButton extends LitElement {
 			${this.config.label ? html`<span class="slide-label">${this.config.label}</span>` : ''}
 			<div class="slide-confirm">
 				<div class="slide-confirm-track"></div>
+				<div class="slide-confirm-fill"></div>
 				<div class="slide-confirm-text unconfirmed">${this.config.textUnconfirmed}</div>
 				<div class="slide-confirm-text confirmed">${this.config.textConfirmed}</div>
 				<div class="slide-confirm-handle"
