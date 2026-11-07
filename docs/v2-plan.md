@@ -1,6 +1,6 @@
 # Slide to Confirm v2 — Plan
 
-Status: **implementation complete** on branch `v2`; M0–M7 are done. Remaining: push, let CI run, verify the editor inside a real Home Assistant, merge to `main`, tag `v2.0.0` (see `docs/releasing.md`).
+Status: **implementation complete** on branch `v2`; M0–M7 are done and the build has been verified inside a real Home Assistant 2026.11 (desktop browser and companion app). Remaining: push, let CI run, merge to `main`, tag `v2.0.0` (see `docs/releasing.md`).
 
 ## 1. Goals
 
@@ -369,6 +369,16 @@ Each milestone is a PR into `v2`; `v2` merges to `main` as 2.0.0 when all are do
 - `hacs.json` declares `homeassistant: 2024.8.0`, the release that introduced `perform-action`
   in action configs. The `hass-action` listener itself dates from 2023.7.
 - `package.json` is at `2.0.0`; the tag is the user's call. Steps are in `docs/releasing.md`.
+
+### 11.2 Verification in a real Home Assistant
+
+Done on HA 2026.11.0 with a test copy of the bundle whose element tags were renamed to
+`sc2test-*` so it could coexist with the installed v1 card. A dedicated dashboard and an
+`input_boolean` helper exercised a v2 entity-aware card (ltr + rtl, `disabled_states`,
+`reset_delay: 0`, haptic), a card in v1 syntax with `call-service`, and a styled card with a
+`more-info` action. Sliders confirmed and the actions ran in a desktop browser and in the
+companion app. Lesson: a resource served from `localhost` only works on the serving PC; host
+test builds under `/local/` instead.
 
 ## 12. Decisions still open (your call)
 
