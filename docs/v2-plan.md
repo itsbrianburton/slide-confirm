@@ -1,6 +1,6 @@
 # Slide to Confirm v2 — Plan
 
-Status: **in progress** on branch `v2`. M0 (tooling), M1 (config), M2 (logic) and M3 (slider) are done; v1 remains on `main`.
+Status: **in progress** on branch `v2`. M0–M4 (tooling, config, logic, slider, card) are done; M5 (editor) is next. v1 remains on `main`.
 
 ## 1. Goals
 
@@ -126,8 +126,10 @@ Supported actions: `perform-action`, `toggle`, `more-info`, `navigate`, `url`,
 `fire-dom-event`, `assist`, `none`. The card fires HA's `hass-action` event and lets the
 frontend execute it, which is how Mushroom and other modern cards work. This replaces the
 hand-rolled `callService` in v1 and removes the need to flatten `target` into service data.
-(Verify during M4 that `hass-action` is handled on the oldest HA version we want to support;
-fall back to `hass.callService` with a proper `target` argument otherwise.)
+(Verified in M4 against the frontend source: `src/state/action-mixin.ts` listens for
+`hass-action` on the app root and runs `handleAction(node, hass, detail.config, detail.action)`;
+the built-in button card fires `{ config: { entity, tap_action, ... }, action: "tap" }`. The card
+fires exactly that shape, so no `callService` fallback is needed.)
 
 The Developer Tools shape people paste by mistake (`action: switch.toggle` with `target`
 and `data`, issue #6) is also accepted and read as `perform-action`, with a note in the
@@ -254,7 +256,9 @@ Compactness (issue #10) is covered by `handle_size`; the travel distance stays f
 - "Upgrade to v2 format" banner shown when `normalizeConfig()` reports legacy keys.
 - `getStubConfig()` returns one working example slider targeting `input_boolean.slide_confirm`.
 - `getCardSize()` and `getGridOptions()` are implemented so the card sizes correctly in
-  sections dashboards (issue #3).
+  sections dashboards (issue #3). M4 decision: `columns: "full"` with `min_columns: 6`, so the
+  card is full width by default but a user may shrink it to half a section in their own
+  layout, accepting the shorter travel (the point raised in issue #10).
 
 ## 8. Architecture
 
@@ -324,7 +328,7 @@ Each milestone is a PR into `v2`; `v2` merges to `main` as 2.0.0 when all are do
 | M1  | `config/`: types, `normalizeConfig()` with legacy mapping + tests                                                                | M0 (done)     |
 | M2  | `logic/geometry.ts` + `style-vars.ts` with tests                                                                                 | M0 (done)     |
 | M3  | `<slide-confirm-slider>`: pointer + keyboard, direction, fill, confirm/reset, haptic, a11y, custom props, parts; component tests | M1, M2 (done) |
-| M4  | `<slide-confirm-card>`: header, hass plumbing, `hass-action`, entity defaults, `disabled_states`, grid options; tests            | M3            |
+| M4  | `<slide-confirm-card>`: header, hass plumbing, `hass-action`, entity defaults, `disabled_states`, grid options; tests            | M3 (done)     |
 | M5  | Editor                                                                                                                           | M4            |
 | M6  | Docs, demo page, migration guide, CHANGELOG                                                                                      | M5            |
 | M7  | Release workflow, 2.0.0 tag, HACS validation                                                                                     | M6            |
