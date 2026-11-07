@@ -87,6 +87,15 @@ export const sliderStyles = css`
 		opacity: 0.38;
 	}
 
+	/* Clips the fill to the track's rounded shape while it shrinks (its own corners
+	   would otherwise poke out past the track's curve). The handle stays outside. */
+	.fill-clip {
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		overflow: hidden;
+	}
+
 	.fill {
 		position: absolute;
 		top: 0;

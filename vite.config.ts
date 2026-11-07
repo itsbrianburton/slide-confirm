@@ -17,11 +17,15 @@ export default defineConfig({
 		emptyOutDir: true,
 		sourcemap: true,
 		target: "es2020",
-		minify: true,
+		// Vite keeps whitespace in ES library builds so /* @__PURE__ */ annotations
+		// survive for downstream bundlers. This bundle is loaded by browsers directly,
+		// so ask Rolldown for full minification instead.
+		minify: false,
 		rollupOptions: {
 			output: {
 				// One file only: no code splitting, no shared chunks.
 				inlineDynamicImports: true,
+				minify: { mangle: true, compress: true, codegen: { removeWhitespace: true } },
 			},
 		},
 	},

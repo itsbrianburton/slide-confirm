@@ -154,6 +154,18 @@ describe("slide-confirm-slider: rendering", () => {
 		}
 	});
 
+	it("clips the fill to the track so a shrinking fill never pokes past the rounded end", async () => {
+		const { el, track } = await mount(baseConfig());
+		const fill = el.shadowRoot!.querySelector(".fill") as HTMLElement;
+		const clip = fill.parentElement as HTMLElement;
+		expect(clip).not.toBe(track);
+		expect(clip.parentElement).toBe(track);
+		expect(getComputedStyle(clip).overflow).toBe("hidden");
+		expect(getComputedStyle(clip).borderRadius).toBe(getComputedStyle(track).borderRadius);
+		// The handle is not inside the clipping layer.
+		expect(el.shadowRoot!.querySelector(".handle")!.parentElement).toBe(track);
+	});
+
 	it("applies the style block as --slide-confirm-* custom properties", async () => {
 		const { root, handle } = await mount(
 			baseConfig({ style: { handle_size: 40, confirmed_color: "rgb(255, 0, 0)" } }),

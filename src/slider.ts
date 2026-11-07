@@ -279,7 +279,7 @@ export class SlideConfirmSlider extends LitElement {
 						: nothing
 				}
 				<div class="track" part="track">
-					<div class="fill" part="fill"></div>
+					<div class="fill-clip"><div class="fill" part="fill"></div></div>
 					<div class="text" part="text">
 						${this._confirmed ? c.text_confirmed : c.text_unconfirmed}
 					</div>
