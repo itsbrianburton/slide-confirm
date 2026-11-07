@@ -13,7 +13,7 @@ export default defineConfig({
 		emptyOutDir: true,
 		sourcemap: true,
 		target: "es2020",
-		minify: "esbuild",
+		minify: true,
 		rollupOptions: {
 			output: {
 				// One file only: no code splitting, no shared chunks.
