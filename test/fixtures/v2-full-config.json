@@ -1,0 +1,29 @@
+{
+	"type": "custom:slide-confirm-card",
+	"header": "Doors",
+	"direction": "rtl",
+	"style": { "handle_size": "44px" },
+	"sliders": [
+		{
+			"name": "Front Door",
+			"icon": "mdi:door",
+			"label": "Unlocks and opens the door",
+			"entity": "lock.front_door",
+			"text_unconfirmed": "Slide to Unlock",
+			"text_confirmed": "Door Unlocked!",
+			"icon_unconfirmed": "mdi:lock",
+			"icon_confirmed": "mdi:lock-open",
+			"direction": "ltr",
+			"reset_delay": 3000,
+			"haptic": true,
+			"disabled_states": ["unlocked", "unavailable"],
+			"confirm_action": {
+				"action": "perform-action",
+				"perform_action": "lock.unlock",
+				"target": { "entity_id": "lock.front_door" },
+				"data": {}
+			},
+			"style": { "confirmed_color": "var(--error-color)" }
+		}
+	]
+}

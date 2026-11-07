@@ -10,6 +10,7 @@
 		"noFallthroughCasesInSwitch": true,
 		"isolatedModules": true,
 		"skipLibCheck": true,
+		"resolveJsonModule": true,
 		"noEmit": true,
 		"experimentalDecorators": true,
 		"useDefineForClassFields": false,

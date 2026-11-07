@@ -1,6 +1,6 @@
 # Slide to Confirm v2 — Plan
 
-Status: **in progress** on branch `v2`. M0 (tooling) is done; v1 remains on `main`.
+Status: **in progress** on branch `v2`. M0 (tooling), M1 (config) and M2 (logic) are done; v1 remains on `main`.
 
 ## 1. Goals
 
@@ -90,22 +90,22 @@ sliders:
 
 ### 4.3 Per-slider keys
 
-| Key                | Type             | Required | Default                              | Notes                                                                              |
-| ------------------ | ---------------- | -------- | ------------------------------------ | ---------------------------------------------------------------------------------- |
-| `name`             | string           | no       | entity friendly name if `entity` set | Shown above the slider                                                             |
-| `icon`             | string           | no       | entity icon if `entity` set          | Shown before the name                                                              |
-| `label`            | string           | no       | —                                    | Secondary text next to the name                                                    |
-| `entity`           | string           | no       | —                                    | Source for default name/icon and for `disabled_states` (issues #4, #12)            |
-| `text_unconfirmed` | string           | yes      | —                                    |                                                                                    |
-| `text_confirmed`   | string           | yes      | —                                    |                                                                                    |
-| `icon_unconfirmed` | string           | yes      | —                                    |                                                                                    |
-| `icon_confirmed`   | string           | yes      | —                                    |                                                                                    |
-| `direction`        | `ltr` \| `rtl`   | no       | card `direction`, else `ltr`         |                                                                                    |
-| `reset_delay`      | integer ms       | no       | `1500`                               | `0` keeps the confirmed state until the entity changes (issue #13); needs `entity` |
-| `haptic`           | boolean          | no       | `false`                              | Fires HA's `haptic` event (PR #19)                                                 |
-| `disabled_states`  | list of strings  | no       | —                                    | Slider is disabled while `entity` is in one of these states (issue #12)            |
-| `confirm_action`   | HA action config | yes      | —                                    | See §4.4                                                                           |
-| `style`            | object           | no       | —                                    | See §6                                                                             |
+| Key                | Type             | Required | Default                                          | Notes                                                                              |
+| ------------------ | ---------------- | -------- | ------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `name`             | string           | no       | entity friendly name if `entity` set             | Shown above the slider                                                             |
+| `icon`             | string           | no       | entity icon if `entity` set                      | Shown before the name                                                              |
+| `label`            | string           | no       | —                                                | Secondary text next to the name                                                    |
+| `entity`           | string           | no       | —                                                | Source for default name/icon and for `disabled_states` (issues #4, #12)            |
+| `text_unconfirmed` | string           | no       | `Slide to confirm`                               |                                                                                    |
+| `text_confirmed`   | string           | no       | `Confirmed`                                      |                                                                                    |
+| `icon_unconfirmed` | string           | no       | `mdi:chevron-right` (`mdi:chevron-left` for rtl) |                                                                                    |
+| `icon_confirmed`   | string           | no       | `mdi:check`                                      |                                                                                    |
+| `direction`        | `ltr` \| `rtl`   | no       | card `direction`, else `ltr`                     |                                                                                    |
+| `reset_delay`      | integer ms       | no       | `1500`                                           | `0` keeps the confirmed state until the entity changes (issue #13); needs `entity` |
+| `haptic`           | boolean          | no       | `false`                                          | Fires HA's `haptic` event (PR #19)                                                 |
+| `disabled_states`  | list of strings  | no       | —                                                | Slider is disabled while `entity` is in one of these states (issue #12)            |
+| `confirm_action`   | HA action config | yes      | —                                                | See §4.4                                                                           |
+| `style`            | object           | no       | —                                                | See §6                                                                             |
 
 ### 4.4 `confirm_action`
 
@@ -128,6 +128,13 @@ frontend execute it, which is how Mushroom and other modern cards work. This rep
 hand-rolled `callService` in v1 and removes the need to flatten `target` into service data.
 (Verify during M4 that `hass-action` is handled on the oldest HA version we want to support;
 fall back to `hass.callService` with a proper `target` argument otherwise.)
+
+The Developer Tools shape people paste by mistake (`action: switch.toggle` with `target`
+and `data`, issue #6) is also accepted and read as `perform-action`, with a note in the
+console. HA's legacy `service_data` alias is mapped to `data`.
+
+Only `confirm_action` is required per slider (M1 decision): the texts and icons have sensible
+defaults so a minimal slider is two lines, and the editor fills them in anyway.
 
 Legacy v1 shape (`action: call-service`, `service: x.y`) is normalized to the above at
 `setConfig` time with a one-time `console.warn`.
@@ -299,8 +306,8 @@ Each milestone is a PR into `v2`; `v2` merges to `main` as 2.0.0 when all are do
 | #   | Milestone                                                                                                                        | Depends on |
 | --- | -------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | M0  | Tooling: Vite, Vitest, ESLint, strict TS, CI workflow, remove Parcel                                                             | — (done)   |
-| M1  | `config/`: types, `normalizeConfig()` with legacy mapping + tests                                                                | M0         |
-| M2  | `logic/geometry.ts` + `style-vars.ts` with tests                                                                                 | M0         |
+| M1  | `config/`: types, `normalizeConfig()` with legacy mapping + tests                                                                | M0 (done)  |
+| M2  | `logic/geometry.ts` + `style-vars.ts` with tests                                                                                 | M0 (done)  |
 | M3  | `<slide-confirm-slider>`: pointer + keyboard, direction, fill, confirm/reset, haptic, a11y, custom props, parts; component tests | M1, M2     |
 | M4  | `<slide-confirm-card>`: header, hass plumbing, `hass-action`, entity defaults, `disabled_states`, grid options; tests            | M3         |
 | M5  | Editor                                                                                                                           | M4         |
