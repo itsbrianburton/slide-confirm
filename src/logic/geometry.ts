@@ -94,16 +94,24 @@ export function applyKey(
 	const forward = direction === "rtl" ? -1 : 1;
 	switch (key) {
 		case "ArrowRight":
-			return clampProgress(progress + forward * step);
+			return snapProgress(progress + forward * step);
 		case "ArrowLeft":
-			return clampProgress(progress - forward * step);
+			return snapProgress(progress - forward * step);
 		case "ArrowUp":
-			return clampProgress(progress + step);
+			return snapProgress(progress + step);
 		case "ArrowDown":
-			return clampProgress(progress - step);
+			return snapProgress(progress - step);
 		case "Home":
 			return 0;
 		default:
 			return null;
 	}
+}
+
+/** Clamp, then snap values within float noise of the ends so ten 0.1 steps reach exactly 1. */
+function snapProgress(progress: number): number {
+	const p = clampProgress(progress);
+	if (p > 1 - 1e-9) return 1;
+	if (p < 1e-9) return 0;
+	return p;
 }

@@ -1,6 +1,6 @@
 # Slide to Confirm v2 — Plan
 
-Status: **in progress** on branch `v2`. M0 (tooling), M1 (config) and M2 (logic) are done; v1 remains on `main`.
+Status: **in progress** on branch `v2`. M0 (tooling), M1 (config), M2 (logic) and M3 (slider) are done; v1 remains on `main`.
 
 ## 1. Goals
 
@@ -171,6 +171,19 @@ one code path for both.
 Open question: should `direction: auto` follow the document `dir` so RTL-language users get
 a mirrored slider by default? Cheap to add; proposed as a follow-up, not v2.0.
 
+### 5.2.1 Implementation notes (M3)
+
+- The element is `<slide-confirm-slider>` in `src/slider.ts`; it fires a bubbling, composed
+  `slide-confirmed` event with `{ action, config }`. The card (M4) turns that into HA's
+  `hass-action`.
+- The handle and fill are anchored at the start edge in CSS (`left: 0`, or `right: 0` for
+  rtl). The component only sets two inline custom properties, `--_x` and `--_fill`, while
+  the handle is away from rest, so rendering at rest never reads layout.
+- `setPointerCapture` is wrapped in try/catch: synthetic pointer events (tests) have no active
+  pointer, and a failure there must not break dragging.
+- Entity name/icon fallback renders `<ha-state-icon>` when no `icon` is configured, so
+  domain default icons work without reimplementing HA's icon logic.
+
 ### 5.3 Accessibility
 
 - Handle gets `role="slider"`, `aria-valuemin/max/now`, `aria-label` from `text_unconfirmed`.
@@ -186,6 +199,8 @@ a mirrored slider by default? Cheap to add; proposed as a follow-up, not v2.0.
   does not respond. Covers the "don't offer unlock when already unlocked" half of issue #12
   without turning the control into a toggle.
 - `reset_delay: 0`: stay confirmed until the entity's state changes (issue #13, slow locks).
+  Safety cap (M3 decision): if the entity never changes, for example because the action
+  failed, the slider resets after 30 s anyway rather than claiming success forever.
 
 ## 6. Styling
 
@@ -303,16 +318,16 @@ tracked for now; dropping it is an M7 decision (see §12).
 
 Each milestone is a PR into `v2`; `v2` merges to `main` as 2.0.0 when all are done.
 
-| #   | Milestone                                                                                                                        | Depends on |
-| --- | -------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| M0  | Tooling: Vite, Vitest, ESLint, strict TS, CI workflow, remove Parcel                                                             | — (done)   |
-| M1  | `config/`: types, `normalizeConfig()` with legacy mapping + tests                                                                | M0 (done)  |
-| M2  | `logic/geometry.ts` + `style-vars.ts` with tests                                                                                 | M0 (done)  |
-| M3  | `<slide-confirm-slider>`: pointer + keyboard, direction, fill, confirm/reset, haptic, a11y, custom props, parts; component tests | M1, M2     |
-| M4  | `<slide-confirm-card>`: header, hass plumbing, `hass-action`, entity defaults, `disabled_states`, grid options; tests            | M3         |
-| M5  | Editor                                                                                                                           | M4         |
-| M6  | Docs, demo page, migration guide, CHANGELOG                                                                                      | M5         |
-| M7  | Release workflow, 2.0.0 tag, HACS validation                                                                                     | M6         |
+| #   | Milestone                                                                                                                        | Depends on    |
+| --- | -------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| M0  | Tooling: Vite, Vitest, ESLint, strict TS, CI workflow, remove Parcel                                                             | — (done)      |
+| M1  | `config/`: types, `normalizeConfig()` with legacy mapping + tests                                                                | M0 (done)     |
+| M2  | `logic/geometry.ts` + `style-vars.ts` with tests                                                                                 | M0 (done)     |
+| M3  | `<slide-confirm-slider>`: pointer + keyboard, direction, fill, confirm/reset, haptic, a11y, custom props, parts; component tests | M1, M2 (done) |
+| M4  | `<slide-confirm-card>`: header, hass plumbing, `hass-action`, entity defaults, `disabled_states`, grid options; tests            | M3            |
+| M5  | Editor                                                                                                                           | M4            |
+| M6  | Docs, demo page, migration guide, CHANGELOG                                                                                      | M5            |
+| M7  | Release workflow, 2.0.0 tag, HACS validation                                                                                     | M6            |
 
 ## 12. Decisions still open (your call)
 

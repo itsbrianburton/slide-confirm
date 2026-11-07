@@ -118,7 +118,7 @@ describe("applyKey", () => {
 	it("ten presses reach 1 and stay clamped", () => {
 		let p = 0;
 		for (let i = 0; i < 10; i++) p = applyKey(p, "ArrowRight", "ltr")!;
-		expect(p).toBeCloseTo(1);
+		expect(p).toBe(1);
 		expect(applyKey(p, "ArrowRight", "ltr")).toBe(1);
 		expect(applyKey(0, "ArrowLeft", "ltr")).toBe(0);
 	});
