@@ -92,7 +92,7 @@ export const sliderStyles = css`
 		top: 0;
 		bottom: 0;
 		left: 0;
-		width: var(--_fill, var(--_handle-size));
+		width: var(--_fill, 0px);
 		border-radius: var(--_radius);
 		background-color: var(--_confirmed-color);
 		opacity: var(--_fill-opacity);

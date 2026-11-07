@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Slide to Confirm – demo</title>
+		<style>
+			/* A slice of Home Assistant's theme variables, light and dark. */
+			:root {
+				--primary-color: #03a9f4;
+				--error-color: #db4437;
+				--primary-text-color: #212121;
+				--secondary-text-color: #727272;
+				--text-primary-color: #fff;
+				--divider-color: rgba(0, 0, 0, 0.12);
+				--primary-background-color: #fafafa;
+				--card-background-color: #fff;
+				--ha-card-background: var(--card-background-color);
+				--ha-card-border-radius: 12px;
+				--slider-track-color: #9e9e9e;
+				color-scheme: light;
+			}
+			:root.dark {
+				--primary-text-color: #e1e1e1;
+				--secondary-text-color: #9b9b9b;
+				--divider-color: rgba(225, 225, 225, 0.12);
+				--primary-background-color: #111;
+				--card-background-color: #1c1c1c;
+				--slider-track-color: #717171;
+				color-scheme: dark;
+			}
+			body {
+				margin: 0;
+				font-family: Roboto, system-ui, sans-serif;
+				background: var(--primary-background-color);
+				color: var(--primary-text-color);
+			}
+			header {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				padding: 12px 16px;
+				background: var(--primary-color);
+				color: var(--text-primary-color);
+			}
+			header h1 {
+				flex: 1;
+				margin: 0;
+				font-size: 20px;
+				font-weight: 400;
+			}
+			header button,
+			header label {
+				font: inherit;
+				color: inherit;
+				background: rgba(255, 255, 255, 0.2);
+				border: 0;
+				border-radius: 6px;
+				padding: 6px 10px;
+				cursor: pointer;
+			}
+			main {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+				gap: 16px;
+				padding: 16px;
+				max-width: 1200px;
+				margin: 0 auto;
+			}
+			section h2 {
+				font-size: 14px;
+				font-weight: 500;
+				color: var(--secondary-text-color);
+				margin: 0 0 8px;
+			}
+			details {
+				margin-top: 8px;
+				font-size: 12px;
+			}
+			pre {
+				margin: 4px 0 0;
+				padding: 8px;
+				border-radius: 6px;
+				background: var(--card-background-color);
+				border: 1px solid var(--divider-color);
+				overflow: auto;
+				max-height: 240px;
+			}
+			#log {
+				grid-column: 1 / -1;
+			}
+			#log pre {
+				min-height: 120px;
+				max-height: 320px;
+			}
+			#states {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 8px 16px;
+				font-size: 13px;
+			}
+			#states code {
+				color: var(--primary-color);
+			}
+		</style>
+		<!-- Stubs for the Home Assistant elements the card uses. Defined before the card renders. -->
+		<script type="module">
+			import * as mdi from "@mdi/js";
+
+			// "mdi:lock-open-variant" -> mdi.mdiLockOpenVariant
+			const pathFor = (icon) => {
+				const name = String(icon ?? "").replace(/^mdi:/, "");
+				const key = "mdi" + name.replace(/(^|-)([a-z0-9])/g, (_, __, c) => c.toUpperCase());
+				return mdi[key] ?? mdi.mdiHelpCircleOutline;
+			};
+
+			class HaCard extends HTMLElement {
+				constructor() {
+					super();
+					this.attachShadow({ mode: "open" }).innerHTML = `
+						<style>
+							:host { display: block; background: var(--ha-card-background, var(--card-background-color, #fff));
+								border-radius: var(--ha-card-border-radius, 12px); border: 1px solid var(--divider-color);
+								color: var(--primary-text-color); box-sizing: border-box; }
+							h1 { font-size: 24px; font-weight: 400; letter-spacing: -0.012em; line-height: 48px;
+								padding: 12px 16px 16px; margin: 0; }
+							h1:empty { display: none; }
+							::slotted(.card-content) { padding: 16px; }
+							:host([has-header]) ::slotted(.card-content) { padding-top: 0; margin-top: -8px; }
+						</style>
+						<h1></h1><slot></slot>`;
+				}
+				set header(v) {
+					this._header = v;
+					this.shadowRoot.querySelector("h1").textContent = v ?? "";
+					this.toggleAttribute("has-header", !!v);
+				}
+				get header() {
+					return this._header;
+				}
+			}
+
+			// Like HA's ha-icon: an SVG sized by --mdc-icon-size, filled with currentColor.
+			class HaIcon extends HTMLElement {
+				constructor() {
+					super();
+					this.attachShadow({ mode: "open" }).innerHTML = `
+						<style>
+							:host { display: inline-flex; align-items: center; justify-content: center;
+								width: var(--mdc-icon-size, 24px); height: var(--mdc-icon-size, 24px); }
+							svg { width: 100%; height: 100%; fill: currentColor; }
+						</style>
+						<svg viewBox="0 0 24 24"><path d=""></path></svg>`;
+				}
+				set icon(v) {
+					this._icon = v;
+					this.shadowRoot.querySelector("path").setAttribute("d", v ? pathFor(v) : "");
+				}
+				get icon() {
+					return this._icon;
+				}
+			}
+
+			class HaStateIcon extends HaIcon {
+				set stateObj(s) {
+					this._stateObj = s;
+					const [domain] = (s?.entity_id ?? "").split(".");
+					const byDomain = {
+						lock: s?.state === "locked" ? "mdi:lock" : "mdi:lock-open-variant",
+						cover: s?.state === "closed" ? "mdi:garage" : "mdi:garage-open",
+						input_boolean: s?.state === "on" ? "mdi:check-circle" : "mdi:close-circle",
+					};
+					this.icon = s?.attributes?.icon ?? byDomain[domain] ?? "mdi:eye";
+				}
+				get stateObj() {
+					return this._stateObj;
+				}
+				set hass(_) {}
+			}
+
+			customElements.define("ha-card", HaCard);
+			customElements.define("ha-icon", HaIcon);
+			customElements.define("ha-state-icon", HaStateIcon);
+		</script>
+		<script type="module" src="/src/index.ts"></script>
+	</head>
+	<body>
+		<header>
+			<h1>Slide to Confirm – demo</h1>
+			<label><input type="checkbox" id="dark" /> Dark theme</label>
+			<button id="reset">Reset entities</button>
+		</header>
+		<main id="cards"></main>
+
+		<script type="module">
+			// ---- a fake Home Assistant -------------------------------------------------
+			const initialStates = () => ({
+				"lock.front_door": { state: "locked", attributes: { friendly_name: "Front Door" } },
+				"cover.garage": { state: "closed", attributes: { friendly_name: "Garage Door" } },
+				"input_boolean.slide_confirm": {
+					state: "off",
+					attributes: { friendly_name: "Slide Confirm" },
+				},
+			});
+			let states = initialStates();
+			const log = (msg) => {
+				const pre = document.querySelector("#log pre");
+				pre.textContent = `${new Date().toLocaleTimeString()}  ${msg}\n` + pre.textContent;
+			};
+			const makeHass = () => ({
+				states: Object.fromEntries(
+					Object.entries(states).map(([id, s]) => [id, { entity_id: id, ...s }]),
+				),
+				callService: async (domain, service, data, target) =>
+					log(`callService ${domain}.${service} ${JSON.stringify({ data, target })}`),
+			});
+			const cards = [];
+			const pushHass = () => {
+				const hass = makeHass();
+				for (const c of cards) c.hass = hass;
+				document.getElementById("states").innerHTML = Object.entries(states)
+					.map(([id, s]) => `<span><code>${id}</code> ${s.state}</span>`)
+					.join("");
+			};
+			const setState = (id, state, delay = 0) =>
+				setTimeout(() => {
+					if (!states[id]) return;
+					states[id].state = state;
+					log(`state ${id} → ${state}`);
+					pushHass();
+				}, delay);
+
+			// What HA's action-mixin would do, for the handful of services the demo uses.
+			document.addEventListener("hass-action", (e) => {
+				const { config, action } = e.detail;
+				const a = config.tap_action ?? {};
+				log(`hass-action (${action}) ${JSON.stringify(a)}`);
+				if (a.action !== "perform-action") return;
+				const id = a.target?.entity_id;
+				switch (a.perform_action) {
+					case "lock.unlock":
+						setState(id, "unlocking");
+						setState(id, "unlocked", 2500);
+						break;
+					case "lock.lock":
+						setState(id, "locking");
+						setState(id, "locked", 2500);
+						break;
+					case "cover.open_cover":
+						setState(id, "opening");
+						setState(id, "open", 2000);
+						break;
+					case "cover.close_cover":
+						setState(id, "closing");
+						setState(id, "closed", 2000);
+						break;
+					case "input_boolean.turn_on":
+						setState(id, "on");
+						break;
+					case "input_boolean.turn_off":
+						setState(id, "off");
+						break;
+				}
+			});
+			document.addEventListener("haptic", (e) => log(`haptic: ${e.detail}`));
+
+			// ---- the cards -------------------------------------------------------------
+			const demos = [
+				{
+					title: "v1 config, unchanged (see console for the deprecation note)",
+					config: {
+						type: "custom:slide-confirm-card",
+						sliders: [
+							{
+								name: "Front Door",
+								icon: "mdi:door",
+								textUnconfirmed: "Slide to Unlock",
+								textConfirmed: "Door Unlocked!",
+								iconUnconfirmed: "mdi:lock",
+								iconConfirmed: "mdi:lock-open",
+								confirm_action: {
+									action: "call-service",
+									service: "input_boolean.turn_on",
+									target: { entity_id: "input_boolean.slide_confirm" },
+								},
+							},
+						],
+					},
+				},
+				{
+					title:
+						"Entity aware: name/icon from the lock, disabled while unlocked, holds until state changes",
+					config: {
+						type: "custom:slide-confirm-card",
+						header: "Front door",
+						sliders: [
+							{
+								entity: "lock.front_door",
+								text_unconfirmed: "Slide to Unlock",
+								text_confirmed: "Unlocking…",
+								icon_unconfirmed: "mdi:lock",
+								icon_confirmed: "mdi:lock-open",
+								disabled_states: ["unlocked", "unlocking"],
+								reset_delay: 0,
+								haptic: true,
+								confirm_action: {
+									action: "perform-action",
+									perform_action: "lock.unlock",
+									target: { entity_id: "lock.front_door" },
+								},
+							},
+							{
+								entity: "lock.front_door",
+								name: "Lock",
+								direction: "rtl",
+								text_unconfirmed: "Slide to Lock",
+								text_confirmed: "Locking…",
+								icon_unconfirmed: "mdi:lock-open",
+								icon_confirmed: "mdi:lock",
+								disabled_states: ["locked", "locking"],
+								reset_delay: 0,
+								confirm_action: {
+									action: "perform-action",
+									perform_action: "lock.lock",
+									target: { entity_id: "lock.front_door" },
+								},
+							},
+						],
+					},
+				},
+				{
+					title: "Two directions, card-level style",
+					config: {
+						type: "custom:slide-confirm-card",
+						header: "Garage",
+						style: { handle_size: 40, font_size: "0.9rem" },
+						sliders: [
+							{
+								name: "Open",
+								icon: "mdi:garage-open",
+								confirm_action: {
+									action: "perform-action",
+									perform_action: "cover.open_cover",
+									target: { entity_id: "cover.garage" },
+								},
+							},
+							{
+								name: "Close",
+								icon: "mdi:garage",
+								direction: "rtl",
+								confirm_action: {
+									action: "perform-action",
+									perform_action: "cover.close_cover",
+									target: { entity_id: "cover.garage" },
+								},
+								style: { confirmed_color: "var(--error-color)" },
+							},
+						],
+					},
+				},
+				{
+					title: "Styled: compact, custom colors, label, no header",
+					config: {
+						type: "custom:slide-confirm-card",
+						sliders: [
+							{
+								name: "Shutdown PC",
+								label: "Takes about a minute",
+								icon: "mdi:power",
+								text_unconfirmed: "Slide to shut down",
+								text_confirmed: "Shutting down…",
+								icon_unconfirmed: "mdi:power",
+								icon_confirmed: "mdi:power-off",
+								reset_delay: 3000,
+								confirm_action: {
+									action: "perform-action",
+									perform_action: "button.press",
+									target: { entity_id: "button.pc" },
+								},
+								style: {
+									handle_size: 36,
+									track_height: 28,
+									confirmed_color: "#e53935",
+									track_color: "#e53935",
+									fill_opacity: 0.3,
+									font_size: "0.85rem",
+								},
+							},
+							{
+								text_unconfirmed: "Defaults only",
+								confirm_action: { action: "none" },
+							},
+						],
+					},
+				},
+			];
+
+			const main = document.getElementById("cards");
+			for (const demo of demos) {
+				const section = document.createElement("section");
+				section.innerHTML = `<h2>${demo.title}</h2>`;
+				const card = document.createElement("slide-confirm-card");
+				card.setConfig(demo.config);
+				section.append(card);
+				const details = document.createElement("details");
+				details.innerHTML = `<summary>config</summary><pre>${JSON.stringify(demo.config, null, 2)}</pre>`;
+				section.append(details);
+				main.append(section);
+				cards.push(card);
+			}
+			const logSection = document.createElement("section");
+			logSection.id = "log";
+			logSection.innerHTML = `<h2>Entities</h2><div id="states"></div><h2 style="margin-top:12px">Events</h2><pre></pre>`;
+			main.append(logSection);
+			pushHass();
+
+			document
+				.getElementById("dark")
+				.addEventListener("change", (e) =>
+					document.documentElement.classList.toggle("dark", e.target.checked),
+				);
+			document.getElementById("reset").addEventListener("click", () => {
+				states = initialStates();
+				pushHass();
+				log("entities reset");
+			});
+		</script>
+	</body>
+</html>

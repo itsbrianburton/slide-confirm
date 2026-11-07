@@ -185,6 +185,7 @@ describe("slide-confirm-slider: dragging", () => {
 		pointer("pointerdown", xAt(0));
 		await settle();
 		expect(root.classList.contains("dragging")).toBe(true);
+		expect(el.shadowRoot!.activeElement).toBe(handle);
 
 		pointer("pointermove", xAt(0.5));
 		await settle();

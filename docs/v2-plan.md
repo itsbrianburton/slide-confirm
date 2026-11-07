@@ -1,6 +1,6 @@
 # Slide to Confirm v2 — Plan
 
-Status: **in progress** on branch `v2`. M0–M5 (tooling, config, logic, slider, card, editor) are done; M6 (docs) is next. v1 remains on `main`.
+Status: **in progress** on branch `v2`. M0–M6 are done; M7 (release) is next. v1 remains on `main`.
 
 ## 1. Goals
 
@@ -333,6 +333,18 @@ tracked for now; dropping it is an M7 decision (see §12).
 - `CHANGELOG.md` starting at 2.0.0.
 - `docs/migration-v1-to-v2.md`.
 
+### 10.1 Implementation notes (M6)
+
+- README rewritten for v2; `docs/migration-v1-to-v2.md` and `CHANGELOG.md` added.
+- `demo/index.html` (`npm run demo`) stubs `ha-card`, `ha-icon` (SVG paths from `@mdi/js`, so it
+  works offline) and `ha-state-icon`, provides a fake `hass` with three entities, and acts on
+  `hass-action` the way HA's action-mixin would for the demo's services, so `disabled_states`
+  and `reset_delay: 0` can be exercised. The editor is not in the demo: it needs HA's `ha-form`.
+- Checked in a real browser during M6: ltr and rtl drags, confirm and reset, entity-driven
+  disabling, dark theme, keyboard steps. Two fixes came out of it: the fill is now zero-width
+  at rest (it was handle-sized and showed a faint edge), and the handle focuses itself on
+  pointerdown because `preventDefault` there suppresses click-to-focus.
+
 ## 11. Work breakdown
 
 Each milestone is a PR into `v2`; `v2` merges to `main` as 2.0.0 when all are done.
@@ -345,7 +357,7 @@ Each milestone is a PR into `v2`; `v2` merges to `main` as 2.0.0 when all are do
 | M3  | `<slide-confirm-slider>`: pointer + keyboard, direction, fill, confirm/reset, haptic, a11y, custom props, parts; component tests | M1, M2 (done) |
 | M4  | `<slide-confirm-card>`: header, hass plumbing, `hass-action`, entity defaults, `disabled_states`, grid options; tests            | M3 (done)     |
 | M5  | Editor                                                                                                                           | M4 (done)     |
-| M6  | Docs, demo page, migration guide, CHANGELOG                                                                                      | M5            |
+| M6  | Docs, demo page, migration guide, CHANGELOG                                                                                      | M5 (done)     |
 | M7  | Release workflow, 2.0.0 tag, HACS validation                                                                                     | M6            |
 
 ## 12. Decisions still open (your call)

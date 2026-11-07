@@ -117,6 +117,8 @@ export class SlideConfirmSlider extends LitElement {
 		if (this.isDisabled || this._confirmed || this._dragging) return;
 		if (e.pointerType === "mouse" && e.button !== 0) return;
 		e.preventDefault();
+		// preventDefault above also suppresses click-to-focus; keyboard users who click first still expect arrows to work.
+		this._handleEl.focus({ preventScroll: true });
 
 		this._geometry = this._measure();
 		this._pointerId = e.pointerId;
