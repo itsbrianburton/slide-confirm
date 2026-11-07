@@ -1,9 +1,9 @@
 import { SlideConfirmCard } from "./card";
-import { SlideConfirmButton } from './slide-confirm';
+import { SlideConfirmButton } from "./slide-confirm";
 
 declare global {
 	interface Window {
-		customCards: Array<Object>;
+		customCards: Array<object>;
 	}
 }
 
@@ -14,5 +14,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
 	type: "slide-confirm-card",
 	name: "Slide to Confirm Card",
-	description: "Prevent accidental button presses by requiring slide to confirm."
+	description: "Prevent accidental button presses by requiring slide to confirm.",
 });

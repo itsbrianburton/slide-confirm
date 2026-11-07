@@ -1,25 +1,34 @@
-import { html, LitElement, TemplateResult, nothing } from 'lit';
-import { state } from 'lit/decorators/state';
+import { html, LitElement, TemplateResult, nothing } from "lit";
+import { state } from "lit/decorators.js";
 
-import { HassEntity } from 'home-assistant-js-websocket';
-import { HomeAssistant, LovelaceCardConfig } from 'custom-card-helpers';
-import { SlideConfirmButtonConfig } from './slide-confirm';
+import { HomeAssistant, LovelaceCardConfig } from "custom-card-helpers";
+import { SlideConfirmButtonConfig } from "./slide-confirm";
 
 interface Config extends LovelaceCardConfig {
-	header: string;
-	entity: string;
+	header?: string;
+	sliders: Array<SlideConfirmButtonConfig>;
+}
+
+interface ConfirmActionDetail {
+	action: string;
+	service: string;
+	target?: {
+		entity_id?: string | string[];
+		device_id?: string | string[];
+		area_id?: string | string[];
+	};
+	data?: Record<string, unknown>;
 }
 
 export class SlideConfirmCard extends LitElement {
-	@state() private _header: string | typeof nothing;
-	@state() private _state: HassEntity;
-	@state() private _sliders: Array<SlideConfirmButtonConfig>;
+	@state() private _header: string | typeof nothing = nothing;
+	@state() private _sliders: Array<SlideConfirmButtonConfig> = [];
 
-	private _hass;
+	private _hass?: HomeAssistant;
 
 	setConfig(config: Config) {
-		this._header = config.header === "" ? nothing : config.header;
-		this._sliders = config.sliders;
+		this._header = config.header === "" || config.header === undefined ? nothing : config.header;
+		this._sliders = config.sliders ?? [];
 
 		if (this._hass) {
 			this.hass = this._hass;
@@ -30,13 +39,13 @@ export class SlideConfirmCard extends LitElement {
 		this._hass = hass;
 	}
 
-	private _callAction(e: CustomEvent) {
+	private _callAction(e: CustomEvent<ConfirmActionDetail>) {
 		const action = e.detail;
 
-		if (action.action === "call-service") {
+		if (action.action === "call-service" && this._hass) {
 			const [domain, service] = action.service.split(".");
 
-			const serviceData: any = {
+			const serviceData: Record<string, unknown> = {
 				...action.data,
 			};
 
@@ -57,9 +66,10 @@ export class SlideConfirmCard extends LitElement {
 	}
 
 	render() {
-		let content: TemplateResult = html`
-			${this._sliders.map((slider) =>
-				html`<slide-confirm @call-action=${this._callAction} config="${slider}" />`
+		const content: TemplateResult = html`
+			${this._sliders.map(
+				(slider) =>
+					html`<slide-confirm @call-action=${this._callAction} .config=${slider}></slide-confirm>`,
 			)}
 		`;
 
@@ -77,7 +87,7 @@ export class SlideConfirmCard extends LitElement {
 	static getStubConfig() {
 		return {
 			entity: "input_boolean.slide-confirm",
-			header: ""
-		}
+			header: "",
+		};
 	}
 }

@@ -1,9 +1,19 @@
 {
 	"compilerOptions": {
+		"target": "ES2020",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"lib": ["ES2020", "DOM", "DOM.Iterable"],
+		"strict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
 		"isolatedModules": true,
-		"target": "es2017",
-		"moduleResolution": "node",
+		"skipLibCheck": true,
+		"noEmit": true,
 		"experimentalDecorators": true,
 		"useDefineForClassFields": false,
-	}
+		"types": ["vite/client"]
+	},
+	"include": ["src", "test", "vite.config.ts", "vitest.config.ts", "eslint.config.js"]
 }

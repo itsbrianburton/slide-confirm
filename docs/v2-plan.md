@@ -1,7 +1,6 @@
 # Slide to Confirm v2 — Plan
 
-Status: **planning**. This document is the design and work plan for the v2 rewrite.
-Nothing in `src/` has been changed yet; v1 remains on `main`.
+Status: **in progress** on branch `v2`. M0 (tooling) is done; v1 remains on `main`.
 
 ## 1. Goals
 
@@ -21,7 +20,7 @@ that confirming requires a deliberate full-width gesture.
 Found while reading `src/`:
 
 - `slide-confirm.ts` imports `html` from `lit/development`, so the dev build of Lit is bundled.
-- `card.ts` passes the slider config as an *attribute* (`config="${slider}"`) rather than a
+- `card.ts` passes the slider config as an _attribute_ (`config="${slider}"`) rather than a
   property (`.config=${slider}`). PR #16 fixed this independently.
 - Both `touchstart`/`touchend` and `pointerdown`/`pointerup` are bound, so touch devices fire
   the handlers twice. Pointer events alone are enough.
@@ -40,18 +39,18 @@ Found while reading `src/`:
 
 ## 3. Feature parity checklist (v1 → v2)
 
-| v1 feature | v2 |
-|---|---|
-| Multiple sliders per card | Kept (`sliders:` list) |
-| Card `header` | Kept |
-| Per-slider `name`, `icon`, `label` | Kept; `label` documented |
-| `textUnconfirmed` / `textConfirmed` | `text_unconfirmed` / `text_confirmed` (legacy keys still read) |
-| `iconUnconfirmed` / `iconConfirmed` | `icon_unconfirmed` / `icon_confirmed` (legacy keys still read) |
+| v1 feature                                                           | v2                                                                                                                  |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Multiple sliders per card                                            | Kept (`sliders:` list)                                                                                              |
+| Card `header`                                                        | Kept                                                                                                                |
+| Per-slider `name`, `icon`, `label`                                   | Kept; `label` documented                                                                                            |
+| `textUnconfirmed` / `textConfirmed`                                  | `text_unconfirmed` / `text_confirmed` (legacy keys still read)                                                      |
+| `iconUnconfirmed` / `iconConfirmed`                                  | `icon_unconfirmed` / `icon_confirmed` (legacy keys still read)                                                      |
 | `confirm_action` with `call-service` + `service` + `target` + `data` | `confirm_action` becomes a standard HA action config (`perform-action` + `perform_action`); legacy shape still read |
-| `target.entity_id` / `device_id` / `area_id` | Kept, plus `floor_id` and `label_id` |
-| 1.5 s "confirmed" state then reset | Kept, now configurable via `reset_delay` |
-| Handle springs back on release | Kept |
-| Theme-aware colors | Kept, with the fallbacks from PR #17 |
+| `target.entity_id` / `device_id` / `area_id`                         | Kept, plus `floor_id` and `label_id`                                                                                |
+| 1.5 s "confirmed" state then reset                                   | Kept, now configurable via `reset_delay`                                                                            |
+| Handle springs back on release                                       | Kept                                                                                                                |
+| Theme-aware colors                                                   | Kept, with the fallbacks from PR #17                                                                                |
 
 ## 4. Config schema
 
@@ -64,49 +63,49 @@ own formats so HA's selectors and docs apply unchanged.
 
 ```yaml
 type: custom:slide-confirm-card
-header: Doors                      # optional
-direction: ltr                     # optional card default: ltr | rtl
-style:                             # optional card defaults, see §6
+header: Doors # optional
+direction: ltr # optional card default: ltr | rtl
+style: # optional card defaults, see §6
   handle_size: 44px
 sliders:
   - name: Front Door
     icon: mdi:door
-    label: Unlocks and opens the door   # optional secondary text
+    label: Unlocks and opens the door # optional secondary text
     text_unconfirmed: Slide to Unlock
     text_confirmed: Door Unlocked!
     icon_unconfirmed: mdi:lock
     icon_confirmed: mdi:lock-open
-    direction: rtl                 # optional, overrides card default
-    reset_delay: 1500              # ms, optional, default 1500
-    haptic: true                   # optional, default false (PR #19)
-    confirm_action:                # standard HA action config
+    direction: rtl # optional, overrides card default
+    reset_delay: 1500 # ms, optional, default 1500
+    haptic: true # optional, default false (PR #19)
+    confirm_action: # standard HA action config
       action: perform-action
       perform_action: lock.unlock
       target:
         entity_id: lock.front_door
       data: {}
-    style:                         # optional per-slider overrides, see §6
+    style: # optional per-slider overrides, see §6
       confirmed_color: var(--error-color)
 ```
 
 ### 4.3 Per-slider keys
 
-| Key | Type | Required | Default | Notes |
-|---|---|---|---|---|
-| `name` | string | no | entity friendly name if `entity` set | Shown above the slider |
-| `icon` | string | no | entity icon if `entity` set | Shown before the name |
-| `label` | string | no | — | Secondary text next to the name |
-| `entity` | string | no | — | Source for default name/icon and for `disabled_states` (issues #4, #12) |
-| `text_unconfirmed` | string | yes | — | |
-| `text_confirmed` | string | yes | — | |
-| `icon_unconfirmed` | string | yes | — | |
-| `icon_confirmed` | string | yes | — | |
-| `direction` | `ltr` \| `rtl` | no | card `direction`, else `ltr` | |
-| `reset_delay` | integer ms | no | `1500` | `0` keeps the confirmed state until the entity changes (issue #13); needs `entity` |
-| `haptic` | boolean | no | `false` | Fires HA's `haptic` event (PR #19) |
-| `disabled_states` | list of strings | no | — | Slider is disabled while `entity` is in one of these states (issue #12) |
-| `confirm_action` | HA action config | yes | — | See §4.4 |
-| `style` | object | no | — | See §6 |
+| Key                | Type             | Required | Default                              | Notes                                                                              |
+| ------------------ | ---------------- | -------- | ------------------------------------ | ---------------------------------------------------------------------------------- |
+| `name`             | string           | no       | entity friendly name if `entity` set | Shown above the slider                                                             |
+| `icon`             | string           | no       | entity icon if `entity` set          | Shown before the name                                                              |
+| `label`            | string           | no       | —                                    | Secondary text next to the name                                                    |
+| `entity`           | string           | no       | —                                    | Source for default name/icon and for `disabled_states` (issues #4, #12)            |
+| `text_unconfirmed` | string           | yes      | —                                    |                                                                                    |
+| `text_confirmed`   | string           | yes      | —                                    |                                                                                    |
+| `icon_unconfirmed` | string           | yes      | —                                    |                                                                                    |
+| `icon_confirmed`   | string           | yes      | —                                    |                                                                                    |
+| `direction`        | `ltr` \| `rtl`   | no       | card `direction`, else `ltr`         |                                                                                    |
+| `reset_delay`      | integer ms       | no       | `1500`                               | `0` keeps the confirmed state until the entity changes (issue #13); needs `entity` |
+| `haptic`           | boolean          | no       | `false`                              | Fires HA's `haptic` event (PR #19)                                                 |
+| `disabled_states`  | list of strings  | no       | —                                    | Slider is disabled while `entity` is in one of these states (issue #12)            |
+| `confirm_action`   | HA action config | yes      | —                                    | See §4.4                                                                           |
+| `style`            | object           | no       | —                                    | See §6                                                                             |
 
 ### 4.4 `confirm_action`
 
@@ -158,7 +157,7 @@ normalized config back. The README gets a migration table. Legacy support is rem
 ### 5.2 Direction
 
 `direction: rtl` puts the handle on the right and requires a right-to-left drag. Internally
-everything is expressed as *progress 0..1 from the start edge*, and only the CSS placement
+everything is expressed as _progress 0..1 from the start edge_, and only the CSS placement
 (`inset-inline-start` vs `inset-inline-end`, mirrored fill) depends on direction. This keeps
 one code path for both.
 
@@ -190,22 +189,23 @@ Three layers, lowest to highest precedence:
 2. **`style:` config block** (card level and per slider). Each key maps 1:1 to a custom
    property, so YAML users never write CSS:
 
-   | Key | CSS property | Default |
-   |---|---|---|
-   | `track_color` | `--slide-confirm-track-color` | `var(--slider-track-color)` at 38% |
-   | `handle_color` | `--slide-confirm-handle-color` | `var(--card-background-color, #fff)` |
-   | `handle_border_color` | `--slide-confirm-handle-border-color` | `var(--divider-color)` |
-   | `confirmed_color` | `--slide-confirm-confirmed-color` | `var(--primary-color)` |
-   | `confirmed_text_color` | `--slide-confirm-confirmed-text-color` | `var(--text-primary-color, #fff)` |
-   | `text_color` | `--slide-confirm-text-color` | `var(--primary-text-color)` |
-   | `handle_size` | `--slide-confirm-handle-size` | `50px` |
-   | `track_height` | `--slide-confirm-track-height` | same as handle size |
-   | `border_radius` | `--slide-confirm-border-radius` | half the handle size |
-   | `font_size` | `--slide-confirm-font-size` | `1rem` |
-   | `fill_opacity` | `--slide-confirm-fill-opacity` | `0.54` |
+   | Key                    | CSS property                           | Default                              |
+   | ---------------------- | -------------------------------------- | ------------------------------------ |
+   | `track_color`          | `--slide-confirm-track-color`          | `var(--slider-track-color)` at 38%   |
+   | `handle_color`         | `--slide-confirm-handle-color`         | `var(--card-background-color, #fff)` |
+   | `handle_border_color`  | `--slide-confirm-handle-border-color`  | `var(--divider-color)`               |
+   | `confirmed_color`      | `--slide-confirm-confirmed-color`      | `var(--primary-color)`               |
+   | `confirmed_text_color` | `--slide-confirm-confirmed-text-color` | `var(--text-primary-color, #fff)`    |
+   | `text_color`           | `--slide-confirm-text-color`           | `var(--primary-text-color)`          |
+   | `handle_size`          | `--slide-confirm-handle-size`          | `50px`                               |
+   | `track_height`         | `--slide-confirm-track-height`         | same as handle size                  |
+   | `border_radius`        | `--slide-confirm-border-radius`        | half the handle size                 |
+   | `font_size`            | `--slide-confirm-font-size`            | `1rem`                               |
+   | `fill_opacity`         | `--slide-confirm-fill-opacity`         | `0.54`                               |
 
    Values are passed through, so `confirmed_color: "#f00"` and
    `confirmed_color: var(--error-color)` both work.
+
 3. **CSS shadow parts** for card_mod power users: `part="track"`, `part="fill"`,
    `part="handle"`, `part="text"`, `part="name"`. The README documents them so issue #5 style
    questions have a canonical answer.
@@ -268,14 +268,22 @@ types and `fireEvent` it provided live in `src/types/`.
 
 ## 9. Tooling
 
-| Area | v1 | v2 |
-|---|---|---|
-| Bundler | Parcel 2 | Vite (lib mode, single ES bundle `dist/slide-confirm.js`) |
-| Tests | none | Vitest; browser mode via Playwright for components |
-| Lint/format | none | ESLint (typescript-eslint, lit plugin) + Prettier |
-| TypeScript | loose | `strict: true`, target ES2020 |
-| CI | none | GitHub Actions: lint, typecheck, unit + component tests, build, on push and PR |
-| Release | manual `dist/` commits | Tag → Actions builds and attaches `slide-confirm.js` to the GitHub release. HACS reads release assets first, so `dist/` no longer needs to be committed and contributors stop having to say "I did not rebuild dist" |
+| Area        | v1                     | v2                                                                                                                                                                                                                   |
+| ----------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bundler     | Parcel 2               | Vite (lib mode, single ES bundle `dist/slide-confirm.js`)                                                                                                                                                            |
+| Tests       | none                   | Vitest; browser mode via Playwright for components                                                                                                                                                                   |
+| Lint/format | none                   | ESLint (typescript-eslint, lit plugin) + Prettier                                                                                                                                                                    |
+| TypeScript  | loose                  | `strict: true`, target ES2020                                                                                                                                                                                        |
+| CI          | none                   | GitHub Actions: lint, typecheck, unit + component tests, build, on push and PR                                                                                                                                       |
+| Release     | manual `dist/` commits | Tag → Actions builds and attaches `slide-confirm.js` to the GitHub release. HACS reads release assets first, so `dist/` no longer needs to be committed and contributors stop having to say "I did not rebuild dist" |
+
+### 9.1 Version choices (M0)
+
+The development machine runs Node 20.18, below the floor for Vite 7+, Vitest 5 and
+ESLint 10, so M0 pinned the newest majors that still support Node 20: Vite 6, Vitest 4 with
+`@vitest/browser-playwright`, ESLint 9, TypeScript 5.9. CI runs on Node 22 with the same
+versions. `package-lock.json` is now committed so `npm ci` is reproducible. `dist/` is still
+tracked for now; dropping it is an M7 decision (see §12).
 
 ## 10. Documentation
 
@@ -288,16 +296,16 @@ types and `fireEvent` it provided live in `src/types/`.
 
 Each milestone is a PR into `v2`; `v2` merges to `main` as 2.0.0 when all are done.
 
-| # | Milestone | Depends on |
-|---|---|---|
-| M0 | Tooling: Vite, Vitest, ESLint, strict TS, CI workflow, remove Parcel | — |
-| M1 | `config/`: types, `normalizeConfig()` with legacy mapping + tests | M0 |
-| M2 | `logic/geometry.ts` + `style-vars.ts` with tests | M0 |
-| M3 | `<slide-confirm-slider>`: pointer + keyboard, direction, fill, confirm/reset, haptic, a11y, custom props, parts; component tests | M1, M2 |
-| M4 | `<slide-confirm-card>`: header, hass plumbing, `hass-action`, entity defaults, `disabled_states`, grid options; tests | M3 |
-| M5 | Editor | M4 |
-| M6 | Docs, demo page, migration guide, CHANGELOG | M5 |
-| M7 | Release workflow, 2.0.0 tag, HACS validation | M6 |
+| #   | Milestone                                                                                                                        | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| M0  | Tooling: Vite, Vitest, ESLint, strict TS, CI workflow, remove Parcel                                                             | — (done)   |
+| M1  | `config/`: types, `normalizeConfig()` with legacy mapping + tests                                                                | M0         |
+| M2  | `logic/geometry.ts` + `style-vars.ts` with tests                                                                                 | M0         |
+| M3  | `<slide-confirm-slider>`: pointer + keyboard, direction, fill, confirm/reset, haptic, a11y, custom props, parts; component tests | M1, M2     |
+| M4  | `<slide-confirm-card>`: header, hass plumbing, `hass-action`, entity defaults, `disabled_states`, grid options; tests            | M3         |
+| M5  | Editor                                                                                                                           | M4         |
+| M6  | Docs, demo page, migration guide, CHANGELOG                                                                                      | M5         |
+| M7  | Release workflow, 2.0.0 tag, HACS validation                                                                                     | M6         |
 
 ## 12. Decisions still open (your call)
 
