@@ -1,6 +1,6 @@
 # Slide to Confirm v2 — Plan
 
-Status: **in progress** on branch `v2`. M0–M4 (tooling, config, logic, slider, card) are done; M5 (editor) is next. v1 remains on `main`.
+Status: **in progress** on branch `v2`. M0–M5 (tooling, config, logic, slider, card, editor) are done; M6 (docs) is next. v1 remains on `main`.
 
 ## 1. Goals
 
@@ -260,6 +260,21 @@ Compactness (issue #10) is covered by `handle_size`; the travel distance stays f
   card is full width by default but a user may shrink it to half a section in their own
   layout, accepting the shorter travel (the point raised in issue #10).
 
+### 7.1 Implementation notes (M5)
+
+- The editor edits the user's _raw_ config. Each slider form is fed `migrateSlider(raw)` so
+  the fields show v2 names, but nothing is written back until the user changes something.
+  A slider the user edits is committed in v2 spelling; untouched sliders keep theirs.
+- "Upgrade" writes `migrateConfig(raw)`: renames only, no defaults, key order preserved, so a
+  v2 config round-trips byte-for-byte. `normalizeConfig()` stays the strict runtime path.
+- Every commit passes through `clean()`, which drops `undefined`, `null`, `""`, empty arrays
+  and empty objects (except `sliders`), so clearing a field removes the key from the YAML.
+- A new slider gets `confirm_action: { action: perform-action }` with no service on purpose:
+  the live preview then shows exactly which field to fill in, instead of silently doing nothing.
+- Reordering uses up/down buttons in the panel header rather than drag-and-drop; `ha-sortable`
+  is a candidate for later.
+- Labels and helper texts are English only. Localization is not planned for 2.0.
+
 ## 8. Architecture
 
 ```
@@ -329,7 +344,7 @@ Each milestone is a PR into `v2`; `v2` merges to `main` as 2.0.0 when all are do
 | M2  | `logic/geometry.ts` + `style-vars.ts` with tests                                                                                 | M0 (done)     |
 | M3  | `<slide-confirm-slider>`: pointer + keyboard, direction, fill, confirm/reset, haptic, a11y, custom props, parts; component tests | M1, M2 (done) |
 | M4  | `<slide-confirm-card>`: header, hass plumbing, `hass-action`, entity defaults, `disabled_states`, grid options; tests            | M3 (done)     |
-| M5  | Editor                                                                                                                           | M4            |
+| M5  | Editor                                                                                                                           | M4 (done)     |
 | M6  | Docs, demo page, migration guide, CHANGELOG                                                                                      | M5            |
 | M7  | Release workflow, 2.0.0 tag, HACS validation                                                                                     | M6            |
 

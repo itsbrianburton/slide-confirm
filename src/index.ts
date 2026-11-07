@@ -1,4 +1,5 @@
 import { SlideConfirmCard } from "./card";
+import { SlideConfirmCardEditor } from "./editor";
 import { SlideConfirmSlider } from "./slider";
 
 declare global {
@@ -13,6 +14,7 @@ const define = (tag: string, ctor: CustomElementConstructor) => {
 
 define("slide-confirm-slider", SlideConfirmSlider);
 define("slide-confirm-card", SlideConfirmCard);
+define("slide-confirm-card-editor", SlideConfirmCardEditor);
 
 window.customCards = window.customCards ?? [];
 window.customCards.push({
@@ -29,4 +31,4 @@ console.info(
 	"color: #03a9f4; background: #fff; font-weight: 700; border-radius: 0 2px 2px 0;",
 );
 
-export { SlideConfirmCard, SlideConfirmSlider };
+export { SlideConfirmCard, SlideConfirmCardEditor, SlideConfirmSlider };

@@ -20,3 +20,10 @@ export interface HomeAssistant {
 }
 
 export type { HassEntity };
+
+/** The contract Home Assistant expects from `getConfigElement()`. */
+export interface LovelaceCardEditor extends HTMLElement {
+	hass?: HomeAssistant;
+	lovelace?: unknown;
+	setConfig(config: unknown): void;
+}

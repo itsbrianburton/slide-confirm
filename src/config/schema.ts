@@ -61,6 +61,12 @@ export const ACTION_KINDS = [
 
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
+export const isActionKind = (v: unknown): v is ActionKind =>
+	typeof v === "string" && (ACTION_KINDS as readonly string[]).includes(v);
+
+/** `domain.service`, as typed in Developer Tools. */
+export const SERVICE_PATTERN = /^[a-z_]+\.[a-z0-9_]+$/;
+
 /**
  * A Home Assistant dashboard action, the same shape HA uses for `tap_action`.
  * Kept flat (rather than a discriminated union) because HA validates the

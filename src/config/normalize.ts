@@ -1,5 +1,7 @@
 import {
 	ACTION_KINDS,
+	isActionKind,
+	SERVICE_PATTERN,
 	type ActionConfig,
 	type ActionConfigInput,
 	type ActionKind,
@@ -65,9 +67,6 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
 const isDirection = (v: unknown): v is SlideDirection =>
 	typeof v === "string" && (SLIDE_DIRECTIONS as readonly string[]).includes(v);
 
-const isActionKind = (v: unknown): v is ActionKind =>
-	typeof v === "string" && (ACTION_KINDS as readonly string[]).includes(v);
-
 /** Accepts a string; treats null/undefined/"" as absent. Rejects other types. */
 function optionalString(value: unknown, where: string): string | undefined {
 	if (value === undefined || value === null || value === "") return undefined;
@@ -112,7 +111,7 @@ export function normalizeConfig(raw: unknown): NormalizeResult {
 }
 
 function normalizeDirection(value: unknown, where: string): SlideDirection | undefined {
-	if (value === undefined || value === null) return undefined;
+	if (value === undefined || value === null || value === "") return undefined;
 	if (!isDirection(value)) {
 		throw new ConfigError(`${where} must be one of: ${SLIDE_DIRECTIONS.join(", ")}`);
 	}
@@ -290,7 +289,7 @@ export function normalizeAction(raw: unknown, where: string): ActionResult {
 			out.perform_action = service;
 			warnings.push(`${where}: \`service\` is deprecated, use \`perform_action\``);
 		}
-	} else if (/^[a-z_]+\.[a-z0-9_]+$/.test(action)) {
+	} else if (SERVICE_PATTERN.test(action)) {
 		kind = "perform-action";
 		out.perform_action = action;
 		warnings.push(

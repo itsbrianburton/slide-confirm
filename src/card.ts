@@ -102,6 +102,11 @@ export class SlideConfirmCard extends LitElement {
 		return { columns: "full", rows, min_columns: 6, min_rows: rows };
 	}
 
+	/** Called by Home Assistant to open the visual editor (M5). */
+	static getConfigElement(): HTMLElement {
+		return document.createElement("slide-confirm-card-editor");
+	}
+
 	/** Example config for the card picker. Targets a helper, never a real lock. */
 	static getStubConfig(): CardConfigInput {
 		return {
