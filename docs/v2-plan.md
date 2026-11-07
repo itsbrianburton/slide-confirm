@@ -1,6 +1,6 @@
 # Slide to Confirm v2 — Plan
 
-Status: **in progress** on branch `v2`. M0–M6 are done; M7 (release) is next. v1 remains on `main`.
+Status: **implementation complete** on branch `v2`; M0–M7 are done. Remaining: push, let CI run, verify the editor inside a real Home Assistant, merge to `main`, tag `v2.0.0` (see `docs/releasing.md`).
 
 ## 1. Goals
 
@@ -358,7 +358,17 @@ Each milestone is a PR into `v2`; `v2` merges to `main` as 2.0.0 when all are do
 | M4  | `<slide-confirm-card>`: header, hass plumbing, `hass-action`, entity defaults, `disabled_states`, grid options; tests            | M3 (done)     |
 | M5  | Editor                                                                                                                           | M4 (done)     |
 | M6  | Docs, demo page, migration guide, CHANGELOG                                                                                      | M5 (done)     |
-| M7  | Release workflow, 2.0.0 tag, HACS validation                                                                                     | M6            |
+| M7  | Release workflow, 2.0.0 tag, HACS validation                                                                                     | M6 (done)     |
+
+### 11.1 Release notes (M7)
+
+- `.github/workflows/release.yml`: on a `v*` tag, checks the tag matches `package.json`, runs
+  `npm run check`, extracts the changelog section, and attaches the bundle to a GitHub release
+  (pre-release when the tag has a hyphen).
+- CI gained a `hacs/action` validation job (category `plugin`).
+- `hacs.json` declares `homeassistant: 2024.8.0`, the release that introduced `perform-action`
+  in action configs. The `hass-action` listener itself dates from 2023.7.
+- `package.json` is at `2.0.0`; the tag is the user's call. Steps are in `docs/releasing.md`.
 
 ## 12. Decisions still open (your call)
 
@@ -388,5 +398,6 @@ Checked items are proposed for v2.0; unchecked ones are deferred or declined. Ed
 - [ ] `direction: auto` following the page's text direction (follow-up, not 2.0)
 - [ ] Should `confirm_action` be renamed to `tap_action` to match HA exactly? Proposed: keep
       `confirm_action`, since the gesture is not a tap and the name documents intent.
-- [ ] Stop committing `dist/` and rely on release assets (§9)? Proposed: yes.
+- [x] Stop committing `dist/` and rely on release assets (§9). Done in M7: the v1.0.1 release
+      already carried `slide-confirm.js` as an asset, so HACS behaviour does not change.
 - [ ] Should legacy v1 keys log a warning or stay silent? Proposed: one `console.warn` per card.

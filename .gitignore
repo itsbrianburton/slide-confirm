@@ -4,3 +4,4 @@ node_modules/
 .vitest/
 test-results/
 *.log
+dist/

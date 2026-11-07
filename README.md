@@ -21,6 +21,8 @@ https://github.com/itsbrianburton/slide-confirm/assets/29252421/086edb77-23ae-45
 
 ## Installation
 
+Requires Home Assistant 2024.8 or newer.
+
 ### HACS (recommended)
 
 1. In HACS, open **Frontend**, then the three-dot menu, then **Custom repositories**.
@@ -271,8 +273,10 @@ npm install
 npm run demo      # standalone demo page with a fake Home Assistant
 npm test          # unit tests (Node) and component tests (Chromium via Playwright)
 npm run check     # lint, format, typecheck, test, build
-npm run build     # dist/slide-confirm.js
+npm run build     # dist/slide-confirm.js (not committed; releases attach it)
 ```
+
+Releases are cut from a tag by GitHub Actions; see [docs/releasing.md](docs/releasing.md).
 
 The component tests need a Chromium build: `npx playwright install chromium` once.
 

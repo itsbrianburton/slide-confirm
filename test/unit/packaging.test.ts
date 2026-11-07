@@ -20,6 +20,10 @@ describe("packaging", () => {
 		expect(hacs.content_in_root).toBe(false);
 	});
 
+	it("hacs.json declares a minimum Home Assistant version", () => {
+		expect(hacs.homeassistant).toMatch(/^\d{4}\.\d{1,2}\.\d+$/);
+	});
+
 	it("package version is semver", () => {
 		expect(pkg.version).toMatch(/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/);
 	});

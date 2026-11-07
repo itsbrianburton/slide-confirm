@@ -41,3 +41,14 @@ jobs:
             dist/slide-confirm.js
             dist/slide-confirm.js.map
           if-no-files-found: error
+
+  hacs:
+    name: HACS validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hacs/action@main
+        with:
+          category: plugin
