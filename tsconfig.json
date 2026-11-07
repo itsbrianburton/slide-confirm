@@ -12,6 +12,7 @@
 		"skipLibCheck": true,
 		"resolveJsonModule": true,
 		"noEmit": true,
+		"allowImportingTsExtensions": true,
 		"experimentalDecorators": true,
 		"useDefineForClassFields": false,
 		"types": ["vite/client"]
