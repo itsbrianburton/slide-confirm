@@ -1,4 +1,7 @@
 node_modules/
-.parcel-cache/
-package-lock.json
 .idea/
+.vscode/
+.vitest/
+test-results/
+*.log
+dist/

@@ -2,5 +2,6 @@
 	"name": "Slide to Confirm",
 	"render_readme": true,
 	"filename": "slide-confirm.js",
-	"content_in_root": false
+	"content_in_root": false,
+	"homeassistant": "2024.8.0"
 }

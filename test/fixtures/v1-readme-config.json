@@ -1,0 +1,55 @@
+{
+	"type": "custom:slide-confirm-card",
+	"sliders": [
+		{
+			"name": "Front Door",
+			"icon": "mdi:door",
+			"textUnconfirmed": "Slide to Unlock",
+			"textConfirmed": "Door Unlocked!",
+			"iconUnconfirmed": "mdi:lock",
+			"iconConfirmed": "mdi:lock-open",
+			"confirm_action": {
+				"action": "call-service",
+				"service": "input_boolean.turn_on",
+				"target": { "entity_id": "input_boolean.slide_confirm" }
+			}
+		},
+		{
+			"name": "Front door fingerprint reader",
+			"icon": "mdi:fingerprint",
+			"textUnconfirmed": "Slide to start enrolling",
+			"textConfirmed": "Enroll started!",
+			"iconUnconfirmed": "mdi:lock",
+			"iconConfirmed": "mdi:lock-open",
+			"confirm_action": {
+				"action": "call-service",
+				"service": "esphome.fingerprint_enroll",
+				"data": { "finger_id": 1, "num_scans": 5 }
+			}
+		},
+		{
+			"name": "Back Door",
+			"textUnconfirmed": "Slide to Unlock",
+			"textConfirmed": "Door Unlocked!",
+			"iconUnconfirmed": "mdi:lock",
+			"iconConfirmed": "mdi:lock-open",
+			"confirm_action": {
+				"action": "call-service",
+				"service": "input_boolean.turn_on",
+				"target": { "device_id": "device123" }
+			}
+		},
+		{
+			"name": "Garage Doors",
+			"textUnconfirmed": "Slide to Unlock",
+			"textConfirmed": "Doors Unlocked!",
+			"iconUnconfirmed": "mdi:lock",
+			"iconConfirmed": "mdi:lock-open",
+			"confirm_action": {
+				"action": "call-service",
+				"service": "input_boolean.turn_on",
+				"target": { "area_id": "garage" }
+			}
+		}
+	]
+}

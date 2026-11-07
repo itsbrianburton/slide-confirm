@@ -1,0 +1,65 @@
+name: Release
+
+# Pushing a tag like v2.0.0 builds the bundle, runs the full check, and
+# creates a GitHub release with slide-confirm.js attached. HACS installs the
+# asset named in hacs.json from the release, so dist/ is not committed.
+# A tag with a hyphen (v2.0.0-rc.1) is published as a pre-release.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check that the tag matches package.json
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag v$TAG does not match package.json version $PKG"
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - name: Install Chromium for component tests
+        run: npx playwright install --with-deps chromium
+
+      - run: npm run check
+
+      - name: Extract release notes from CHANGELOG.md
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '
+            /^## \[/ { if (found) exit; if (index($0, v)) found = 1; next }
+            found { print }
+          ' CHANGELOG.md | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "See CHANGELOG.md for details." > release-notes.md
+          fi
+          echo "--- release notes ---"; cat release-notes.md
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release-notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            dist/slide-confirm.js
+            dist/slide-confirm.js.map
+          fail_on_unmatched_files: true

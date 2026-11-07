@@ -1,28 +1,51 @@
 {
 	"name": "slide-confirm",
-	"version": "1.0.1",
+	"version": "2.0.0",
 	"description": "Custom card for Home Assistant to prevent accidental button presses.",
 	"author": "Brian Burton",
-	"source": "src/index.ts",
-	"module": "dist/slide-confirm.js",
-	"targets": {
-		"module": {
-			"includeNodeModules": true
-		}
+	"license": "MIT",
+	"private": true,
+	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/itsbrianburton/slide-confirm.git"
+	},
+	"engines": {
+		"node": ">=22.12"
 	},
 	"scripts": {
-		"watch": "parcel watch",
-		"build": "parcel build"
+		"dev": "vite build --watch",
+		"demo": "vite --open /demo/",
+		"build": "vite build",
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"lint": "eslint .",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"test": "vitest run",
+		"test:unit": "vitest run --project unit",
+		"test:component": "vitest run --project component",
+		"test:watch": "vitest",
+		"check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run build"
 	},
 	"devDependencies": {
-		"@parcel/transformer-inline-string": "^2.8.3",
-		"@parcel/transformer-sass": "^2.12.0",
-		"parcel": "^2.8.3",
-		"sass": "^1.75.0"
+		"@eslint/js": "^10.0.1",
+		"@mdi/js": "^7.4.47",
+		"@types/node": "^22.20.5",
+		"@vitest/browser-playwright": "^5.1.0",
+		"eslint": "^10.14.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-lit": "^2.3.1",
+		"eslint-plugin-wc": "^3.1.0",
+		"globals": "^17.14.0",
+		"home-assistant-js-websocket": "^9.8.1",
+		"playwright": "^1.65.0",
+		"prettier": "^3.9.10",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.72.1",
+		"vite": "^8.3.6",
+		"vitest": "^5.1.0"
 	},
 	"dependencies": {
-		"custom-card-helpers": "^1.9.0",
-		"home-assistant-js-websocket": "^8.0.1",
-		"lit": "^2.7.4"
+		"lit": "^3.3.3"
 	}
 }
