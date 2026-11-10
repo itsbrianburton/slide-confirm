@@ -8,6 +8,7 @@ import {
 	migrateSlider,
 	normalizeConfig,
 	type SliderConfigInput,
+	THEMES,
 } from "./config";
 import { editorStyles } from "./styles/editor.css";
 import type { HomeAssistant, LovelaceCardEditor } from "./types/home-assistant";
@@ -28,6 +29,16 @@ import { loadHaComponents } from "./util/load-ha-components";
  */
 
 type HaFormSchema = Record<string, unknown>;
+
+const THEME_SELECT = {
+	select: {
+		mode: "dropdown",
+		options: THEMES.map((value) => ({
+			value,
+			label: value === "ios" ? "iOS" : value[0].toUpperCase() + value.slice(1),
+		})),
+	},
+};
 
 const DIRECTION_SELECT = {
 	select: {
@@ -74,6 +85,7 @@ export const CARD_SCHEMA: HaFormSchema[] = [
 			{ name: "direction", selector: DIRECTION_SELECT },
 		],
 	},
+	{ name: "theme", selector: THEME_SELECT },
 	{
 		type: "expandable",
 		name: "style",
@@ -129,6 +141,7 @@ export const SLIDER_SCHEMA: HaFormSchema[] = [
 				name: "",
 				schema: [
 					{ name: "direction", selector: DIRECTION_SELECT },
+					{ name: "theme", selector: THEME_SELECT },
 					{
 						name: "reset_delay",
 						selector: { number: { min: 0, step: 100, mode: "box", unit_of_measurement: "ms" } },
@@ -136,6 +149,17 @@ export const SLIDER_SCHEMA: HaFormSchema[] = [
 				],
 			},
 			{ name: "haptic", selector: { boolean: {} } },
+			{
+				type: "grid",
+				name: "",
+				schema: [
+					{ name: "snap", selector: { boolean: {} } },
+					{
+						name: "snap_distance",
+						selector: { number: { min: 10, step: 5, mode: "box", unit_of_measurement: "px" } },
+					},
+				],
+			},
 			{ name: "disabled_states", selector: { text: { multiple: true } } },
 		],
 	},
@@ -145,6 +169,7 @@ export const SLIDER_SCHEMA: HaFormSchema[] = [
 const LABELS: Record<string, string> = {
 	header: "Card title",
 	direction: "Slide direction",
+	theme: "Theme",
 	entity: "Entity",
 	name: "Name",
 	icon: "Icon",
@@ -156,6 +181,8 @@ const LABELS: Record<string, string> = {
 	confirm_action: "Action on confirm",
 	reset_delay: "Reset after",
 	haptic: "Haptic feedback",
+	snap: "Snap to the end",
+	snap_distance: "Snap distance",
 	disabled_states: "Disable when entity state is",
 	track_color: "Track color",
 	handle_color: "Handle color",
@@ -172,8 +199,11 @@ const LABELS: Record<string, string> = {
 
 const HELPERS: Record<string, string> = {
 	direction: "Leave empty to use the card default (left to right).",
+	theme: "Built-in look. Leave empty for the classic look (or the card's theme).",
 	entity: "Optional. Supplies the default name and icon and enables the state options below.",
 	reset_delay: "Milliseconds. 0 keeps the confirmed state until the entity changes state.",
+	snap: "Near the end the knob snaps in like a latch with a short tick; release to confirm, pull back to let go.",
+	snap_distance: "How far before the end the knob snaps in. Defaults to 1.4 handle sizes.",
 	disabled_states: "Press Enter after each state, e.g. unlocked, unavailable.",
 	handle_size: "CSS length, e.g. 44px. Default 50px.",
 	track_height: "CSS length. Defaults to the handle size.",
@@ -255,8 +285,8 @@ export class SlideConfirmCardEditor extends LitElement implements LovelaceCardEd
 	private _cardChanged(ev: CustomEvent<{ value: Partial<CardConfigInput> }>): void {
 		ev.stopPropagation();
 		if (!this._config) return;
-		const { header, direction, style } = ev.detail.value;
-		this._commit({ ...this._config, header, direction, style });
+		const { header, direction, theme, style } = ev.detail.value;
+		this._commit({ ...this._config, header, direction, theme, style });
 	}
 
 	private _sliderChanged(index: number, ev: CustomEvent<{ value: SliderConfigInput }>): void {
@@ -295,7 +325,12 @@ export class SlideConfirmCardEditor extends LitElement implements LovelaceCardEd
 		const c = this._config;
 		if (!c) return nothing;
 		const sliders = this._sliders();
-		const cardData = { header: c.header ?? undefined, direction: c.direction, style: c.style };
+		const cardData = {
+			header: c.header ?? undefined,
+			direction: c.direction,
+			theme: c.theme,
+			style: c.style,
+		};
 
 		return html`
 			${

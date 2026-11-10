@@ -67,27 +67,31 @@ sliders:
 | `type`      | string                        |         | `custom:slide-confirm-card`                           |
 | `header`    | string                        |         | Card title                                            |
 | `direction` | `ltr` \| `rtl`                | `ltr`   | Default slide direction for all sliders               |
+| `theme`     | [theme](#themes)              |         | Default theme for all sliders                         |
 | `style`     | [style object](#style-object) |         | Style defaults for all sliders                        |
 | `sliders`   | list                          |         | **Required.** One or more [sliders](#slider-options). |
 
 ### Slider options
 
-| Option             | Type                          | Default                                            | Description                                                                                                        |
-| ------------------ | ----------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `confirm_action`   | [action](#confirm_action)     |                                                    | **Required.** What happens after a successful slide.                                                               |
-| `name`             | string                        | entity friendly name                               | Text above the slider                                                                                              |
-| `icon`             | string                        | entity icon                                        | Icon before the name, e.g. `mdi:door`                                                                              |
-| `label`            | string                        |                                                    | Secondary text next to the name                                                                                    |
-| `entity`           | string                        |                                                    | Supplies the default name and icon and enables `disabled_states` and `reset_delay: 0`                              |
-| `text_unconfirmed` | string                        | `Slide to confirm`                                 | Text on the track before confirming                                                                                |
-| `text_confirmed`   | string                        | `Confirmed`                                        | Text on the track after confirming                                                                                 |
-| `icon_unconfirmed` | string                        | `mdi:chevron-right` (`mdi:chevron-left` for `rtl`) | Icon on the handle                                                                                                 |
-| `icon_confirmed`   | string                        | `mdi:check`                                        | Icon on the handle after confirming                                                                                |
-| `direction`        | `ltr` \| `rtl`                | card `direction`                                   | `rtl` puts the handle on the right and requires a right-to-left slide                                              |
-| `reset_delay`      | integer (ms)                  | `1500`                                             | How long the confirmed state is shown. `0` holds it until the entity changes state (needs `entity`), 30 s at most. |
-| `haptic`           | boolean                       | `false`                                            | Vibrate the device on a successful slide (companion app, or browsers with **Vibrate** enabled in the user profile) |
-| `disabled_states`  | string or list                |                                                    | Grey out and disable the slider while `entity` is in one of these states                                           |
-| `style`            | [style object](#style-object) |                                                    | Style overrides for this slider                                                                                    |
+| Option             | Type                          | Default                                            | Description                                                                                                                        |
+| ------------------ | ----------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `confirm_action`   | [action](#confirm_action)     |                                                    | **Required.** What happens after a successful slide.                                                                               |
+| `name`             | string                        | entity friendly name                               | Text above the slider                                                                                                              |
+| `icon`             | string                        | entity icon                                        | Icon before the name, e.g. `mdi:door`                                                                                              |
+| `label`            | string                        |                                                    | Secondary text next to the name                                                                                                    |
+| `entity`           | string                        |                                                    | Supplies the default name and icon and enables `disabled_states` and `reset_delay: 0`                                              |
+| `text_unconfirmed` | string                        | `Slide to confirm`                                 | Text on the track before confirming                                                                                                |
+| `text_confirmed`   | string                        | `Confirmed`                                        | Text on the track after confirming                                                                                                 |
+| `icon_unconfirmed` | string                        | `mdi:chevron-right` (`mdi:chevron-left` for `rtl`) | Icon on the handle                                                                                                                 |
+| `icon_confirmed`   | string                        | `mdi:check`                                        | Icon on the handle after confirming                                                                                                |
+| `direction`        | `ltr` \| `rtl`                | card `direction`                                   | `rtl` puts the handle on the right and requires a right-to-left slide                                                              |
+| `reset_delay`      | integer (ms)                  | `1500`                                             | How long the confirmed state is shown. `0` holds it until the entity changes state (needs `entity`), 30 s at most.                 |
+| `haptic`           | boolean                       | `false`                                            | Vibrate the device on a successful slide (companion app, or browsers with **Vibrate** enabled in the user profile)                 |
+| `snap`             | boolean                       | `false`                                            | Near the end the handle snaps in like a latch, with a short haptic tap; release to confirm, pull back to let go. See [Snap](#snap) |
+| `snap_distance`    | integer (px)                  | 1.4 × handle size                                  | How far before the end the handle snaps in                                                                                         |
+| `theme`            | [theme](#themes)              | card `theme`                                       | One of the built-in looks                                                                                                          |
+| `disabled_states`  | string or list                |                                                    | Grey out and disable the slider while `entity` is in one of these states                                                           |
+| `style`            | [style object](#style-object) |                                                    | Style overrides for this slider                                                                                                    |
 
 ### `confirm_action`
 
@@ -162,6 +166,62 @@ card_mod:
       [part="text"] { font-weight: 600; letter-spacing: 0.02em; }
 sliders: ...
 ```
+
+## Snap
+
+<img src="img/snap.webp" alt="Snap" height="92">
+
+With `snap: true` the slider behaves like a physical latch:
+
+- The handle tracks your finger exactly until it is within `snap_distance` of the end.
+- Then it springs to the end and hits it with a small bounce. The haptic tap (`light`, the
+  keyboard tap on Android) fires at the moment of impact.
+- While snapped it gives a little if you pull back. Pull back further and it lets go, with
+  another tap, and follows your finger again.
+- Releasing while snapped confirms; releasing anywhere else springs the handle back.
+
+Every movement (snapping, letting go, returning) is a spring that carries your finger's speed,
+and the prompt text fades out as the handle moves over it. Haptics need `haptic: true`.
+
+```yaml
+type: custom:slide-confirm-card
+sliders:
+  - name: Garage door
+    snap: true
+    haptic: true
+    theme: ios
+    confirm_action:
+      action: perform-action
+      perform_action: cover.toggle
+      target:
+        entity_id: cover.garage_door
+```
+
+## Themes
+
+`theme` picks a built-in look, per card or per slider. Each theme still uses your Home Assistant
+theme's accent color (`--primary-color`, or `confirmed_color` from the [style object](#style-object))
+unless it has its own palette. Leaving `theme` out keeps the classic look.
+
+Shown at rest, while sliding and snapped, and in motion (with `snap: true`):
+
+| Theme     | Preview                                                       | In motion                                                               |
+| --------- | ------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `ios`     | <img src="img/themes/ios.png" alt="ios" height="118">         | <img src="img/themes/ios.webp" alt="ios in motion" height="92">         |
+| `minimal` | <img src="img/themes/minimal.png" alt="minimal" height="118"> | <img src="img/themes/minimal.webp" alt="minimal in motion" height="90"> |
+| `glow`    | <img src="img/themes/glow.png" alt="glow" height="118">       | <img src="img/themes/glow.webp" alt="glow in motion" height="92">       |
+| `glass`   | <img src="img/themes/glass.png" alt="glass" height="118">     | <img src="img/themes/glass.webp" alt="glass in motion" height="92">     |
+| `tonal`   | <img src="img/themes/tonal.png" alt="tonal" height="118">     | <img src="img/themes/tonal.webp" alt="tonal in motion" height="84">     |
+| `sunrise` | <img src="img/themes/sunrise.png" alt="sunrise" height="118"> | <img src="img/themes/sunrise.webp" alt="sunrise in motion" height="92"> |
+| `outline` | <img src="img/themes/outline.png" alt="outline" height="118"> | <img src="img/themes/outline.webp" alt="outline in motion" height="92"> |
+| `soft`    | <img src="img/themes/soft.png" alt="soft" height="118">       | <img src="img/themes/soft.webp" alt="soft in motion" height="94">       |
+| `arrows`  | <img src="img/themes/arrows.png" alt="arrows" height="118">   | <img src="img/themes/arrows.webp" alt="arrows in motion" height="92">   |
+| `mono`    | <img src="img/themes/mono.png" alt="mono" height="118">       | <img src="img/themes/mono.webp" alt="mono in motion" height="92">       |
+| `hazard`  | <img src="img/themes/hazard.png" alt="hazard" height="118">   | <img src="img/themes/hazard.webp" alt="hazard in motion" height="92">   |
+| `aurora`  | <img src="img/themes/aurora.png" alt="aurora" height="118">   | <img src="img/themes/aurora.webp" alt="aurora in motion" height="92">   |
+
+Themes inset the handle in the track, so `track_height` is ignored; the color options of the
+style object still apply where a theme uses them.
 
 ## Examples
 
@@ -240,8 +300,8 @@ sliders:
 
 ## Behaviour
 
-- **Confirming** requires releasing the handle at the far end (within 2 px). Releasing earlier
-  springs it back without doing anything.
+- **Confirming** requires releasing the handle at the far end (within 2 px), or anywhere while
+  it is snapped with [`snap`](#snap). Releasing earlier springs it back without doing anything.
 - **Keyboard**: focus the handle and press the arrow keys. Each press moves 10%, so confirming
   takes ten presses. Home resets. There is no shortcut that jumps to the end.
 - **Disabled** sliders (via `disabled_states`) are greyed out and ignore input.

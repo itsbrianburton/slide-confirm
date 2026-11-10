@@ -369,6 +369,106 @@ describe("slide-confirm-slider: haptic", () => {
 	});
 });
 
+describe("slide-confirm-slider: snap", () => {
+	const haptics: string[] = [];
+	const listener = (e: Event) => haptics.push((e as CustomEvent).detail as string);
+	afterEach(() => {
+		window.removeEventListener("haptic", listener);
+		haptics.length = 0;
+	});
+
+	it("tracks 1:1, locks near the end with a tick, holds, lets go, confirms on release", async () => {
+		window.addEventListener("haptic", listener);
+		const { el, pointer, xAt, events, settle } = await mount(
+			baseConfig({ snap: true, haptic: true }),
+		);
+		pointer("pointerdown", xAt(0));
+		pointer("pointermove", xAt(0.5));
+		await settle();
+		expect(el.progress).toBeCloseTo(0.5);
+		expect(haptics).toEqual([]);
+
+		// 350px travel, 50px handle: snaps within 70px of the end and ticks when the
+		// knob hits the end stop.
+		pointer("pointermove", xAt(0.98));
+		await new Promise((r) => setTimeout(r, 400));
+		await settle();
+		expect(el.confirmed).toBe(false);
+		expect(haptics).toEqual(["light"]);
+
+		// A small pullback (to 52px before the end) is held.
+		pointer("pointermove", xAt(0.85));
+		await settle();
+		expect(haptics).toEqual(["light"]);
+
+		// Pulling further (105px before the end) lets go.
+		pointer("pointermove", xAt(0.7));
+		await settle();
+		expect(haptics).toEqual(["light", "light"]);
+
+		pointer("pointermove", xAt(0.98));
+		pointer("pointerup", xAt(0.98));
+		await settle();
+		expect(el.confirmed).toBe(true);
+		expect(events).toHaveLength(1);
+		// Released before the knob reached the end: the confirm haptic stands in for the tick.
+		expect(haptics).toEqual(["light", "light", "success"]);
+	});
+
+	it("does not confirm when released after letting go of the end", async () => {
+		const { el, pointer, xAt, events, settle } = await mount(baseConfig({ snap: true }));
+		pointer("pointerdown", xAt(0));
+		pointer("pointermove", xAt(0.98));
+		pointer("pointermove", xAt(0.5));
+		pointer("pointerup", xAt(0.5));
+		await settle();
+		expect(el.confirmed).toBe(false);
+		expect(events).toHaveLength(0);
+	});
+
+	it("needs the very end without snap", async () => {
+		const { el, pointer, xAt, events, settle } = await mount(baseConfig());
+		pointer("pointerdown", xAt(0));
+		pointer("pointermove", xAt(0.95));
+		pointer("pointerup", xAt(0.95));
+		await settle();
+		expect(el.confirmed).toBe(false);
+		expect(events).toHaveLength(0);
+	});
+});
+
+describe("slide-confirm-slider: theme", () => {
+	it("adds the theme class and insets the knob inside the track", async () => {
+		const { el, root, handle, track } = await mount(baseConfig({ theme: "ios" }));
+		expect(root.classList.contains("theme-ios")).toBe(true);
+		const t = track.getBoundingClientRect();
+		const h = handle.getBoundingClientRect();
+		expect(h.left - t.left).toBeCloseTo(4, 0);
+		expect(el.progress).toBe(0);
+	});
+
+	it("keeps the knob inside the track at the end", async () => {
+		const { root, handle, track, drag, settle } = await mount(baseConfig({ theme: "ios" }));
+		await drag(0, 1);
+		await settle();
+		expect(root.classList.contains("confirmed")).toBe(true);
+		const t = track.getBoundingClientRect();
+		const h = handle.getBoundingClientRect();
+		expect(t.right - h.right).toBeCloseTo(4, 0);
+	});
+
+	it("shows the confirmed icon while snapped", async () => {
+		const { el, pointer, xAt, settle } = await mount(baseConfig({ theme: "ios", snap: true }));
+		const icon = () =>
+			el.shadowRoot!.querySelector(".handle ha-icon") as HTMLElement & { icon: string };
+		expect(icon().icon).toBe("mdi:lock");
+		pointer("pointerdown", xAt(0));
+		pointer("pointermove", xAt(0.98));
+		await settle();
+		expect(icon().icon).toBe("mdi:lock-open");
+	});
+});
+
 describe("slide-confirm-slider: entity awareness", () => {
 	it("is disabled while the entity is in a disabled_states state", async () => {
 		const hass = hassWith("lock.front_door", "unlocked");

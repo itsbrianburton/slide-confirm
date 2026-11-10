@@ -9,6 +9,8 @@ import {
 	type CardConfigInput,
 	DEFAULTS,
 	SLIDE_DIRECTIONS,
+	type SliderTheme,
+	THEMES,
 	type SlideDirection,
 	type SliderConfig,
 	type SliderConfigInput,
@@ -55,6 +57,9 @@ const KNOWN_SLIDER_KEYS: ReadonlySet<string> = new Set([
 	"direction",
 	"reset_delay",
 	"haptic",
+	"snap",
+	"snap_distance",
+	"theme",
 	"disabled_states",
 	"confirm_action",
 	"style",
@@ -89,10 +94,11 @@ export function normalizeConfig(raw: unknown): NormalizeResult {
 	}
 
 	const cardDirection = normalizeDirection(input.direction, "`direction`") ?? DEFAULTS.direction;
+	const cardTheme = normalizeOneOf(input.theme, THEMES, "`theme`");
 	const cardStyle = normalizeStyle(input.style, "`style`", warnings);
 
 	const sliders = input.sliders.map((slider, index) => {
-		const result = normalizeSlider(slider, index, cardDirection);
+		const result = normalizeSlider(slider, index, cardDirection, cardTheme);
 		warnings.push(...result.warnings);
 		legacy ||= result.legacy;
 		return result.config;
@@ -105,6 +111,7 @@ export function normalizeConfig(raw: unknown): NormalizeResult {
 	};
 	const header = optionalString(input.header, "`header`");
 	if (header !== undefined) config.header = header;
+	if (cardTheme !== undefined) config.theme = cardTheme;
 	if (cardStyle) config.style = cardStyle;
 
 	return { config, warnings, legacy };
@@ -116,6 +123,19 @@ function normalizeDirection(value: unknown, where: string): SlideDirection | und
 		throw new ConfigError(`${where} must be one of: ${SLIDE_DIRECTIONS.join(", ")}`);
 	}
 	return value;
+}
+
+/** A value from a fixed list, or undefined when unset. */
+function normalizeOneOf<T extends string>(
+	value: unknown,
+	allowed: readonly T[],
+	where: string,
+): T | undefined {
+	if (value === undefined || value === null || value === "") return undefined;
+	if (!(allowed as readonly unknown[]).includes(value)) {
+		throw new ConfigError(`${where} must be one of: ${allowed.join(", ")}`);
+	}
+	return value as T;
 }
 
 function normalizeStyle(
@@ -147,7 +167,12 @@ interface SliderResult {
 	legacy: boolean;
 }
 
-function normalizeSlider(raw: unknown, index: number, cardDirection: SlideDirection): SliderResult {
+function normalizeSlider(
+	raw: unknown,
+	index: number,
+	cardDirection: SlideDirection,
+	cardTheme?: SliderTheme,
+): SliderResult {
 	const where = `Slider ${index + 1}`;
 	if (!isObject(raw)) throw new ConfigError(`${where} must be an object`);
 	const input = raw as SliderConfigInput;
@@ -192,6 +217,18 @@ function normalizeSlider(raw: unknown, index: number, cardDirection: SlideDirect
 		haptic: normalizeBoolean(input.haptic, `${where}.haptic`) ?? DEFAULTS.haptic,
 		confirm_action: action.config,
 	};
+
+	const snap = normalizeBoolean(input.snap, `${where}.snap`);
+	if (snap !== undefined) config.snap = snap;
+	if (input.snap_distance !== undefined && input.snap_distance !== null) {
+		const d = input.snap_distance;
+		if (typeof d !== "number" || !Number.isFinite(d) || d <= 0) {
+			throw new ConfigError(`${where}.snap_distance must be a number of px > 0`);
+		}
+		config.snap_distance = d;
+	}
+	const theme = normalizeOneOf(input.theme, THEMES, `${where}.theme`) ?? cardTheme;
+	if (theme !== undefined) config.theme = theme;
 
 	const name = optionalString(input.name, `${where}.name`);
 	const icon = optionalString(input.icon, `${where}.icon`);

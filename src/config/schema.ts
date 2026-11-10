@@ -10,6 +10,36 @@ export type SlideDirection = "ltr" | "rtl";
 
 export const SLIDE_DIRECTIONS: readonly SlideDirection[] = ["ltr", "rtl"];
 
+/** Built-in looks for `theme`. */
+export type SliderTheme =
+	| "ios"
+	| "minimal"
+	| "glow"
+	| "glass"
+	| "tonal"
+	| "sunrise"
+	| "outline"
+	| "soft"
+	| "arrows"
+	| "mono"
+	| "hazard"
+	| "aurora";
+
+export const THEMES: readonly SliderTheme[] = [
+	"ios",
+	"minimal",
+	"glow",
+	"glass",
+	"tonal",
+	"sunrise",
+	"outline",
+	"soft",
+	"arrows",
+	"mono",
+	"hazard",
+	"aurora",
+];
+
 /** Keys of the `style:` block. Each maps 1:1 to a `--slide-confirm-*` custom property. */
 export interface StyleConfig {
 	track_color?: string;
@@ -99,6 +129,15 @@ export interface SliderConfig {
 	direction: SlideDirection;
 	reset_delay: number;
 	haptic: boolean;
+	/**
+	 * Near the end the handle snaps in like a latch (haptic tap on impact); pulling back
+	 * lets go. Releasing while snapped confirms.
+	 */
+	snap?: boolean;
+	/** With `snap`: how far before the end (px) the knob snaps. Default: 1.4 handle widths. */
+	snap_distance?: number;
+	/** Built-in look; absent means the classic v2 look. */
+	theme?: SliderTheme;
 	disabled_states?: string[];
 	confirm_action: ActionConfig;
 	style?: StyleConfig;
@@ -109,6 +148,7 @@ export interface CardConfig {
 	type: string;
 	header?: string;
 	direction: SlideDirection;
+	theme?: SliderTheme;
 	style?: StyleConfig;
 	sliders: SliderConfig[];
 }
@@ -126,6 +166,9 @@ export interface SliderConfigInput {
 	direction?: SlideDirection;
 	reset_delay?: number;
 	haptic?: boolean;
+	snap?: boolean;
+	snap_distance?: number;
+	theme?: SliderTheme;
 	disabled_states?: string[];
 	confirm_action?: ActionConfigInput;
 	style?: StyleConfig;
@@ -154,6 +197,7 @@ export interface CardConfigInput {
 	type?: string;
 	header?: string | null;
 	direction?: SlideDirection;
+	theme?: SliderTheme;
 	style?: StyleConfig;
 	sliders?: SliderConfigInput[];
 	[extra: string]: unknown;

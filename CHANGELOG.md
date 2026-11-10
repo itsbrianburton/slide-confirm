@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `snap: true`: the handle tracks the finger 1:1 and, within `snap_distance` of the end, springs
+  in like a latch with a small bounce and a short `light` haptic tap on impact. While snapped it
+  gives a little; pulling back further lets go with another tap. Releasing while snapped
+  confirms. All movement uses springs that carry the finger's speed, and the prompt fades as the
+  handle passes over it.
+- `snap_distance` to tune where it snaps in (default 1.4 × handle size).
+- `theme` (card or slider): twelve built-in looks: `ios`, `minimal`, `glow`, `glass`, `tonal`,
+  `sunrise`, `outline`, `soft`, `arrows`, `mono`, `hazard`, `aurora`.
+
+### Changed
+
+- The handle is positioned with the CSS `translate` property instead of `transform`, so a
+  `scale` (from a theme or card_mod) no longer shifts it.
+
 ## [Unreleased] – 2.0.0
 
 A full rewrite. v1 configs keep working; see

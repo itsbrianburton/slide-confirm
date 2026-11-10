@@ -188,10 +188,32 @@ describe("normalizeConfig: validation errors", () => {
 		fails(card([slider({ reset_delay: -1 })]), /reset_delay must be a number/);
 		fails(card([slider({ reset_delay: "fast" })]), /reset_delay must be a number/);
 		fails(card([slider({ haptic: "yes" })]), "Slider 1.haptic must be true or false");
+		fails(card([slider({ snap: "yes" })]), "Slider 1.snap must be true or false");
 		fails(card([slider({ disabled_states: [1] })]), /disabled_states must be a list of strings/);
 		fails(card([slider()], { header: 5 }), "`header` must be a string");
 		fails(card([slider()], { style: "red" }), "`style` must be an object");
 		fails(card([slider({ style: { handle_size: {} } })]), /style\.handle_size must be a string/);
+	});
+
+	it("applies the card theme to every slider unless a slider overrides it", () => {
+		const { config } = normalizeConfig(
+			card([slider(), slider({ theme: "mono" })], { theme: "ios" }),
+		);
+		expect(config.theme).toBe("ios");
+		expect(config.sliders[0].theme).toBe("ios");
+		expect(config.sliders[1].theme).toBe("mono");
+		const plain = normalizeConfig(card([slider()])).config;
+		expect(plain).not.toHaveProperty("theme");
+		expect(plain.sliders[0]).not.toHaveProperty("theme");
+		fails(card([slider({ theme: "neon" })]), /Slider 1\.theme must be one of: ios/);
+		fails(card([slider()], { theme: "neon" }), /`theme` must be one of: ios/);
+	});
+
+	it("keeps snap only when set", () => {
+		const plain = normalizeConfig(card([slider()])).config.sliders[0];
+		expect(plain).not.toHaveProperty("snap");
+		const set = normalizeConfig(card([slider({ snap: true })])).config.sliders[0];
+		expect(set.snap).toBe(true);
 	});
 
 	it("warns about options that depend on entity", () => {

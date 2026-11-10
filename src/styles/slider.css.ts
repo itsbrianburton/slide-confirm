@@ -149,9 +149,10 @@ export const sliderStyles = css`
 		--mdc-icon-size: calc(var(--_handle-size) * 0.5);
 		cursor: grab;
 		touch-action: none;
-		transform: translate(var(--_x, 0px), -50%);
+		/* The translate property (not transform) so a design's scale never scales the offset. */
+		translate: var(--_x, 0px) -50%;
 		transition:
-			transform 300ms,
+			translate 300ms,
 			background-color 300ms,
 			border-color 300ms;
 		outline: none;
@@ -169,6 +170,25 @@ export const sliderStyles = css`
 	.dragging .handle,
 	.dragging .fill {
 		transition: none;
+	}
+
+	/* snap: position is driven by springs in JS; only colours transition in CSS. */
+	.physics .handle {
+		transition:
+			background-color 300ms,
+			border-color 300ms;
+	}
+
+	.physics .fill {
+		transition: none;
+	}
+
+	.physics.confirmed .fill {
+		transition: width 300ms;
+	}
+
+	.physics .text {
+		opacity: var(--_text-opacity, 1);
 	}
 
 	.dragging .handle {
