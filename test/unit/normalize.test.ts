@@ -290,3 +290,116 @@ describe("normalizeAction", () => {
 		).toThrow(`${where}.data must be an object`);
 	});
 });
+
+describe("normalizeConfig: theme", () => {
+	it("applies the card theme to every slider unless a slider overrides it", () => {
+		const { config } = normalizeConfig(
+			card([slider(), slider({ theme: "mono" })], { theme: "ios" }),
+		);
+		expect(config.theme).toBe("ios");
+		expect(config.sliders[0].theme).toBe("ios");
+		expect(config.sliders[1].theme).toBe("mono");
+		const plain = normalizeConfig(card([slider()])).config;
+		expect(plain).not.toHaveProperty("theme");
+		expect(plain.sliders[0]).not.toHaveProperty("theme");
+	});
+
+	it("rejects unknown themes", () => {
+		expect(() => normalizeConfig(card([slider({ theme: "neon" })]))).toThrow(
+			/Slider 1\.theme must be one of: ios/,
+		);
+		expect(() => normalizeConfig(card([slider()], { theme: "neon" }))).toThrow(
+			/`theme` must be one of: ios/,
+		);
+	});
+});
+
+describe("normalizeConfig: states", () => {
+	const open = { action: "perform-action", perform_action: "cover.open_cover" };
+	const close = { action: "perform-action", perform_action: "cover.close_cover" };
+
+	it("resolves each entry against the slider's own options", () => {
+		const { config, warnings } = normalizeConfig(
+			card([
+				{
+					entity: "cover.garage",
+					text_confirmed: "Working on it",
+					icon_confirmed: "mdi:garage-alert",
+					states: {
+						closed: { text_unconfirmed: "Slide to open", confirm_action: open },
+						open: { direction: "rtl", text_unconfirmed: "Slide to close", confirm_action: close },
+					},
+				},
+			]),
+		);
+		expect(warnings).toEqual([]);
+		const s = config.sliders[0];
+		expect(s.states).toEqual({
+			closed: {
+				direction: "ltr",
+				text_unconfirmed: "Slide to open",
+				text_confirmed: "Working on it",
+				icon_unconfirmed: "mdi:chevron-right",
+				icon_confirmed: "mdi:garage-alert",
+				confirm_action: open,
+			},
+			open: {
+				direction: "rtl",
+				text_unconfirmed: "Slide to close",
+				text_confirmed: "Working on it",
+				// Defaults follow the entry's own direction.
+				icon_unconfirmed: "mdi:chevron-left",
+				icon_confirmed: "mdi:garage-alert",
+				confirm_action: close,
+			},
+		});
+		// The slider-level action is optional with `states` and never fires.
+		expect(s.confirm_action).toEqual({ action: "none" });
+	});
+
+	it("uses the slider's action and explicit icon as defaults for entries", () => {
+		const { config } = normalizeConfig(
+			card([
+				slider({
+					entity: "cover.garage",
+					icon_unconfirmed: "mdi:garage",
+					states: { closed: {}, open: { direction: "rtl" } },
+				}),
+			]),
+		);
+		const states = config.sliders[0].states!;
+		expect(states.closed.confirm_action).toEqual({
+			action: "perform-action",
+			perform_action: "lock.unlock",
+		});
+		expect(states.open.icon_unconfirmed).toBe("mdi:garage");
+	});
+
+	it("rejects states without an entity, an action, or a map", () => {
+		expect(() =>
+			normalizeConfig(card([slider({ states: { closed: { confirm_action: open } } })])),
+		).toThrow("Slider 1.states needs `entity`");
+		expect(() =>
+			normalizeConfig(card([{ entity: "cover.garage", states: { closed: {} } }])),
+		).toThrow(/Slider 1\.states\.closed\.confirm_action is required/);
+		expect(() => normalizeConfig(card([{ entity: "cover.garage", states: [] }]))).toThrow(
+			/states must map entity states to options/,
+		);
+		expect(() =>
+			normalizeConfig(
+				card([
+					{ entity: "cover.garage", states: { closed: { confirm_action: open, direction: "up" } } },
+				]),
+			),
+		).toThrow(/states\.closed\.direction must be one of/);
+	});
+
+	it("warns about unknown keys in an entry", () => {
+		const { warnings } = normalizeConfig(
+			card([
+				{ entity: "cover.garage", states: { closed: { confirm_action: open, haptic: true } } },
+			]),
+		);
+		expect(warnings).toEqual(["Slider 1.states.closed: unknown option `haptic` ignored"]);
+	});
+});

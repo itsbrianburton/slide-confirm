@@ -8,6 +8,7 @@ import {
 	migrateSlider,
 	normalizeConfig,
 	type SliderConfigInput,
+	THEMES,
 } from "./config";
 import { editorStyles } from "./styles/editor.css";
 import type { HomeAssistant, LovelaceCardEditor } from "./types/home-assistant";
@@ -36,6 +37,16 @@ const DIRECTION_SELECT = {
 			{ value: "ltr", label: "Left to right" },
 			{ value: "rtl", label: "Right to left" },
 		],
+	},
+};
+
+const THEME_SELECT = {
+	select: {
+		mode: "dropdown",
+		options: THEMES.map((value) => ({
+			value,
+			label: value === "ios" ? "iOS" : value[0].toUpperCase() + value.slice(1),
+		})),
 	},
 };
 
@@ -74,6 +85,7 @@ export const CARD_SCHEMA: HaFormSchema[] = [
 			{ name: "direction", selector: DIRECTION_SELECT },
 		],
 	},
+	{ name: "theme", selector: THEME_SELECT },
 	{
 		type: "expandable",
 		name: "style",
@@ -129,6 +141,7 @@ export const SLIDER_SCHEMA: HaFormSchema[] = [
 				name: "",
 				schema: [
 					{ name: "direction", selector: DIRECTION_SELECT },
+					{ name: "theme", selector: THEME_SELECT },
 					{
 						name: "reset_delay",
 						selector: { number: { min: 0, step: 100, mode: "box", unit_of_measurement: "ms" } },
@@ -145,6 +158,7 @@ export const SLIDER_SCHEMA: HaFormSchema[] = [
 const LABELS: Record<string, string> = {
 	header: "Card title",
 	direction: "Slide direction",
+	theme: "Theme",
 	entity: "Entity",
 	name: "Name",
 	icon: "Icon",
@@ -172,6 +186,7 @@ const LABELS: Record<string, string> = {
 
 const HELPERS: Record<string, string> = {
 	direction: "Leave empty to use the card default (left to right).",
+	theme: "Built-in look. Leave empty for the classic look (or the card's theme).",
 	entity: "Optional. Supplies the default name and icon and enables the state options below.",
 	reset_delay: "Milliseconds. 0 keeps the confirmed state until the entity changes state.",
 	disabled_states: "Press Enter after each state, e.g. unlocked, unavailable.",
@@ -205,6 +220,7 @@ const sliderTitle = (raw: SliderConfigInput, index: number): string =>
 	`Slider ${index + 1}`;
 
 const actionSummary = (slider: SliderConfigInput): string => {
+	if (slider.states && typeof slider.states === "object") return "Actions per entity state";
 	const a = slider.confirm_action;
 	if (!a || typeof a !== "object") return "No action";
 	if (a.action === "perform-action") return a.perform_action || "Choose an action";
@@ -255,8 +271,8 @@ export class SlideConfirmCardEditor extends LitElement implements LovelaceCardEd
 	private _cardChanged(ev: CustomEvent<{ value: Partial<CardConfigInput> }>): void {
 		ev.stopPropagation();
 		if (!this._config) return;
-		const { header, direction, style } = ev.detail.value;
-		this._commit({ ...this._config, header, direction, style });
+		const { header, direction, theme, style } = ev.detail.value;
+		this._commit({ ...this._config, header, direction, theme, style });
 	}
 
 	private _sliderChanged(index: number, ev: CustomEvent<{ value: SliderConfigInput }>): void {
@@ -295,7 +311,12 @@ export class SlideConfirmCardEditor extends LitElement implements LovelaceCardEd
 		const c = this._config;
 		if (!c) return nothing;
 		const sliders = this._sliders();
-		const cardData = { header: c.header ?? undefined, direction: c.direction, style: c.style };
+		const cardData = {
+			header: c.header ?? undefined,
+			direction: c.direction,
+			theme: c.theme,
+			style: c.style,
+		};
 
 		return html`
 			${
@@ -366,6 +387,16 @@ export class SlideConfirmCardEditor extends LitElement implements LovelaceCardEd
 					</ha-icon-button>
 				</div>
 				<div class="content">
+					${
+						data.states && typeof data.states === "object"
+							? html`
+									<ha-alert alert-type="info" class="states-note">
+										This slider has per-state options (<code>states:</code>). Edit them in the code
+										editor; the fields below are the defaults they fall back to.
+									</ha-alert>
+								`
+							: nothing
+					}
 					<ha-form
 						class="slider-form"
 						.hass=${this.hass}

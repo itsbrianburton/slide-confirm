@@ -11,6 +11,15 @@ while you are out. A slide across the full width of your phone is hard to do by 
 > sliding, a `style:` block for colors and sizes, entity awareness, keyboard access and a test
 > suite. v1 configs keep working unchanged. See [Migrating from v1](#migrating-from-v1).
 
+## Demo
+
+**[Try it in your browser](https://itsbrianburton.github.io/slide-confirm/demo/)**, no Home
+Assistant needed. The demo runs the real card against a simulated lock and garage door, and
+shows each action the card would send. It includes the [themes](#themes), the
+[one-slider garage door](#states), dark mode, and right-to-left sliders.
+
+To run it locally from a clone: `npm install`, then `npm run demo`.
+
 ## Screenshot
 
 ![Screenshot](https://github.com/itsbrianburton/slide-confirm/raw/main/img/screenshot.png)
@@ -67,6 +76,7 @@ sliders:
 | `type`      | string                        |         | `custom:slide-confirm-card`                           |
 | `header`    | string                        |         | Card title                                            |
 | `direction` | `ltr` \| `rtl`                | `ltr`   | Default slide direction for all sliders               |
+| `theme`     | [theme](#themes)              |         | Default theme for all sliders                         |
 | `style`     | [style object](#style-object) |         | Style defaults for all sliders                        |
 | `sliders`   | list                          |         | **Required.** One or more [sliders](#slider-options). |
 
@@ -74,7 +84,7 @@ sliders:
 
 | Option             | Type                          | Default                                            | Description                                                                                                        |
 | ------------------ | ----------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `confirm_action`   | [action](#confirm_action)     |                                                    | **Required.** What happens after a successful slide.                                                               |
+| `confirm_action`   | [action](#confirm_action)     |                                                    | **Required** (unless every [`states`](#states) entry has one). What happens after a successful slide.              |
 | `name`             | string                        | entity friendly name                               | Text above the slider                                                                                              |
 | `icon`             | string                        | entity icon                                        | Icon before the name, e.g. `mdi:door`                                                                              |
 | `label`            | string                        |                                                    | Secondary text next to the name                                                                                    |
@@ -87,6 +97,8 @@ sliders:
 | `reset_delay`      | integer (ms)                  | `1500`                                             | How long the confirmed state is shown. `0` holds it until the entity changes state (needs `entity`), 30 s at most. |
 | `haptic`           | boolean                       | `false`                                            | Vibrate the device on a successful slide (companion app, or browsers with **Vibrate** enabled in the user profile) |
 | `disabled_states`  | string or list                |                                                    | Grey out and disable the slider while `entity` is in one of these states                                           |
+| `states`           | map                           |                                                    | Per-state text, icons, direction and action, so one slider can work both ways. See [`states`](#states)             |
+| `theme`            | [theme](#themes)              | card `theme`                                       | One of the built-in looks                                                                                          |
 | `style`            | [style object](#style-object) |                                                    | Style overrides for this slider                                                                                    |
 
 ### `confirm_action`
@@ -111,6 +123,56 @@ confirmation dialogs apply.
 
 The v1 shape (`action: call-service` with `service:`) and the Developer Tools shape
 (`action: lock.unlock` with `target:`) are still accepted.
+
+### `states`
+
+One slider that changes with its entity: a garage door slider that opens when the door is
+closed and closes when it is open. Each key is an entity state; its value can set
+`direction`, `text_unconfirmed`, `text_confirmed`, `icon_unconfirmed`, `icon_confirmed` and
+`confirm_action`. Anything an entry leaves out comes from the slider's own options. Needs
+`entity`.
+
+```yaml
+type: custom:slide-confirm-card
+sliders:
+  - entity: cover.garage
+    reset_delay: 0
+    states:
+      closed:
+        text_unconfirmed: Slide to open
+        text_confirmed: Opening…
+        confirm_action:
+          action: perform-action
+          perform_action: cover.open_cover
+          target: { entity_id: cover.garage }
+      open:
+        direction: rtl
+        text_unconfirmed: Slide to close
+        text_confirmed: Closing…
+        confirm_action:
+          action: perform-action
+          perform_action: cover.close_cover
+          target: { entity_id: cover.garage }
+```
+
+When the door is closed the handle rests on the left and you slide right to open. When it is
+open the handle rests on the right and you slide left to close. Every action still needs a
+full slide.
+
+- **States the map does not list** (`opening`, `closing`, `unavailable`, `unknown`) disable
+  the slider, and the track shows the state as Home Assistant displays it. Add an entry for a
+  state if you want the slider usable in it.
+- **Use the explicit service for each state** (`cover.open_cover` / `cover.close_cover`, not
+  `cover.toggle`). If Home Assistant's state is ever out of date, the worst case is a command
+  the door is already in, never the opposite one.
+- **If the entity changes state mid-slide**, the slide is dropped: the handle returns to rest
+  and nothing runs, even if you finish the gesture.
+- **With `reset_delay: 0`** the confirmed text stays up while the door moves and clears once it
+  reaches a listed state, with the handle already on its new resting side. The usual 30 s cap
+  still applies.
+- Covers without a position sensor often report only `unknown` or an assumed state. For those,
+  add an `unknown:` entry with `confirm_action` set to `cover.toggle`, or keep two separate
+  sliders.
 
 ### Style object
 
@@ -163,6 +225,33 @@ card_mod:
 sliders: ...
 ```
 
+## Themes
+
+`theme` picks a built-in look, for the whole card or per slider: `ios`, `minimal`, `glow`,
+`glass`, `tonal`, `sunrise`, `outline`, `soft`, `arrows`, `mono`, `hazard`, `aurora`. Themes
+use your Home Assistant accent color (`--primary-color`, or `confirmed_color` from the
+[style object](#style-object)) unless they have their own palette. Leave `theme` out for the
+classic look.
+
+![Themes at rest, while sliding and confirmed](img/themes.png)
+
+Themes inset the handle in the track, so `track_height` is ignored. The color options of the
+style object still apply where a theme uses them. Themes contributed by
+[@dbuezas](https://github.com/dbuezas) (PR #20).
+
+```yaml
+type: custom:slide-confirm-card
+theme: glow
+sliders:
+  - name: Front door
+    confirm_action:
+      {
+        action: perform-action,
+        perform_action: lock.unlock,
+        target: { entity_id: lock.front_door },
+      }
+```
+
 ## Examples
 
 ### Lock that shows its state
@@ -189,7 +278,10 @@ sliders:
         entity_id: lock.front_door
 ```
 
-### Two directions in one card
+### Garage door with one slider
+
+See [`states`](#states). If you prefer one slider per direction, use two sliders with opposite
+`direction`:
 
 ```yaml
 type: custom:slide-confirm-card
@@ -244,7 +336,8 @@ sliders:
   springs it back without doing anything.
 - **Keyboard**: focus the handle and press the arrow keys. Each press moves 10%, so confirming
   takes ten presses. Home resets. There is no shortcut that jumps to the end.
-- **Disabled** sliders (via `disabled_states`) are greyed out and ignore input.
+- **Disabled** sliders (via `disabled_states`, or a state `states` does not list) are greyed
+  out and ignore input.
 - **Config notes**, such as deprecated v1 option names, are printed once to the browser console.
 - **Sections dashboards**: the card is full width by default and can be shrunk to half a
   section in the layout editor.

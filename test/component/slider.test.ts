@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import type { SliderConfig } from "../../src/config";
+import { normalizeConfig, type SliderConfig } from "../../src/config";
 import type { SlideConfirmSlider, SlideConfirmedDetail } from "../../src/slider";
 import type { HomeAssistant } from "../../src/types/home-assistant";
 
@@ -447,5 +447,251 @@ describe("slide-confirm-slider: config changes", () => {
 		expect(el.confirmed).toBe(false);
 		expect(el.progress).toBe(0);
 		expect(el.shadowRoot!.querySelector(".text")!.textContent?.trim()).toBe("Slide to Lock");
+	});
+});
+
+describe("slide-confirm-slider: theme", () => {
+	it("adds the theme class and insets the handle inside the track", async () => {
+		const { el, root, handle, track } = await mount(baseConfig({ theme: "ios" }));
+		expect(root.classList.contains("theme-ios")).toBe(true);
+		const t = track.getBoundingClientRect();
+		const h = handle.getBoundingClientRect();
+		expect(h.left - t.left).toBeCloseTo(4, 0);
+		expect(el.progress).toBe(0);
+	});
+
+	it("confirms only on release at the far end of the inset track", async () => {
+		const { el, root, handle, track, pointer, settle, events } = await mount(
+			baseConfig({ theme: "ios" }),
+		);
+		const t = track.getBoundingClientRect();
+		const h = handle.getBoundingClientRect();
+		const start = h.left + h.width / 2;
+		const end = t.right - 4 - h.width / 2;
+		pointer("pointerdown", start);
+		await settle();
+		pointer("pointermove", end);
+		await settle();
+		// At the end but not released: nothing looks or acts confirmed yet (PR #20 review).
+		expect(root.classList.contains("confirmed")).toBe(false);
+		expect((handle.querySelector("ha-icon") as { icon?: string }).icon).toBe("mdi:lock");
+		expect(t.right - handle.getBoundingClientRect().right).toBeCloseTo(4, 0);
+		pointer("pointerup", end);
+		await settle();
+		expect(el.confirmed).toBe(true);
+		expect(events).toHaveLength(1);
+	});
+
+	it("does not confirm when released short of the end", async () => {
+		const { el, handle, track, pointer, settle, events } = await mount(
+			baseConfig({ theme: "glow" }),
+		);
+		const t = track.getBoundingClientRect();
+		const h = handle.getBoundingClientRect();
+		const short = t.right - 4 - h.width / 2 - 20;
+		pointer("pointerdown", h.left + h.width / 2);
+		await settle();
+		pointer("pointermove", short);
+		pointer("pointerup", short);
+		await settle();
+		expect(el.confirmed).toBe(false);
+		expect(events).toHaveLength(0);
+	});
+});
+
+describe("slide-confirm-slider: states", () => {
+	const OPEN = {
+		action: "perform-action",
+		perform_action: "cover.open_cover",
+		target: { entity_id: "cover.garage" },
+	};
+	const CLOSE = {
+		action: "perform-action",
+		perform_action: "cover.close_cover",
+		target: { entity_id: "cover.garage" },
+	};
+	const garage = (overrides: Record<string, unknown> = {}): SliderConfig =>
+		normalizeConfig({
+			sliders: [
+				{
+					entity: "cover.garage",
+					reset_delay: 0,
+					states: {
+						closed: {
+							text_unconfirmed: "Slide to open",
+							text_confirmed: "Opening",
+							confirm_action: OPEN,
+						},
+						open: {
+							direction: "rtl",
+							text_unconfirmed: "Slide to close",
+							text_confirmed: "Closing",
+							confirm_action: CLOSE,
+						},
+					},
+					...overrides,
+				},
+			],
+		}).config.sliders[0];
+
+	const withState = (state: string) => {
+		const hass = hassWith("cover.garage", state);
+		(hass as Record<string, unknown>).formatEntityState = (s: { state: string }) =>
+			s.state[0].toUpperCase() + s.state.slice(1);
+		return hass;
+	};
+
+	/** clientX for the handle centre at `progress`, for a given slide direction. */
+	const xFor = (track: HTMLElement, handle: HTMLElement, progress: number, rtl: boolean) => {
+		const t = track.getBoundingClientRect();
+		const w = handle.getBoundingClientRect().width;
+		const fromLeft = rtl ? 1 - progress : progress;
+		return t.left + w / 2 + fromLeft * (t.width - w);
+	};
+
+	const text = (el: SlideConfirmSlider) =>
+		el.shadowRoot!.querySelector(".text")!.textContent?.trim();
+	const icon = (handle: HTMLElement) => (handle.querySelector("ha-icon") as { icon?: string }).icon;
+
+	it("closed: rests on the left and a left-to-right slide opens", async () => {
+		const { el, root, handle, track, pointer, settle, events } = await mount(
+			garage(),
+			withState("closed"),
+		);
+		expect(root.classList.contains("rtl")).toBe(false);
+		expect(text(el)).toBe("Slide to open");
+		expect(icon(handle)).toBe("mdi:chevron-right");
+		pointer("pointerdown", xFor(track, handle, 0, false));
+		await settle();
+		pointer("pointermove", xFor(track, handle, 1, false));
+		pointer("pointerup", xFor(track, handle, 1, false));
+		await settle();
+		expect(events).toHaveLength(1);
+		expect(events[0].detail.action).toEqual(OPEN);
+		expect(text(el)).toBe("Opening");
+	});
+
+	it("open: rests on the right and only a right-to-left slide closes", async () => {
+		const { el, root, handle, track, pointer, settle, events } = await mount(
+			garage(),
+			withState("open"),
+		);
+		expect(root.classList.contains("rtl")).toBe(true);
+		expect(text(el)).toBe("Slide to close");
+		expect(icon(handle)).toBe("mdi:chevron-left");
+		expect(Math.round(handle.getBoundingClientRect().right)).toBe(
+			Math.round(track.getBoundingClientRect().right),
+		);
+
+		// Pushing further right from rest does nothing.
+		pointer("pointerdown", xFor(track, handle, 0, true));
+		await settle();
+		pointer("pointermove", xFor(track, handle, 0, true) + 100);
+		pointer("pointerup", xFor(track, handle, 0, true) + 100);
+		await settle();
+		expect(events).toHaveLength(0);
+
+		pointer("pointerdown", xFor(track, handle, 0, true));
+		await settle();
+		pointer("pointermove", xFor(track, handle, 1, true));
+		pointer("pointerup", xFor(track, handle, 1, true));
+		await settle();
+		expect(events).toHaveLength(1);
+		expect(events[0].detail.action).toEqual(CLOSE);
+	});
+
+	it("is disabled and shows the state in states the map does not list", async () => {
+		const { el, root, handle, pointer, xAt, settle, events } = await mount(
+			garage(),
+			withState("opening"),
+		);
+		expect(el.isDisabled).toBe(true);
+		expect(root.classList.contains("disabled")).toBe(true);
+		expect(text(el)).toBe("Opening");
+		expect(handle.getAttribute("aria-disabled")).toBe("true");
+		pointer("pointerdown", xAt(0));
+		pointer("pointermove", xAt(1));
+		pointer("pointerup", xAt(1));
+		await settle();
+		expect(events).toHaveLength(0);
+	});
+
+	it("is disabled before hass arrives", async () => {
+		const { el } = await mount(garage());
+		expect(el.isDisabled).toBe(true);
+		expect(text(el)).toBe("Unavailable");
+	});
+
+	it("drops a slide in progress when the entity changes state", async () => {
+		const { el, handle, track, pointer, settle, events } = await mount(
+			garage(),
+			withState("closed"),
+		);
+		pointer("pointerdown", xFor(track, handle, 0, false));
+		await settle();
+		pointer("pointermove", xFor(track, handle, 0.6, false));
+		await settle();
+		expect(el.progress).toBeGreaterThan(0.5);
+
+		el.hass = withState("open");
+		await settle();
+		expect(el.progress).toBe(0);
+
+		// The rest of the gesture does nothing, in either direction.
+		pointer("pointermove", xFor(track, handle, 1, false));
+		pointer("pointerup", xFor(track, handle, 1, false));
+		pointer("pointermove", xFor(track, handle, 1, true));
+		pointer("pointerup", xFor(track, handle, 1, true));
+		await settle();
+		expect(events).toHaveLength(0);
+		expect(el.confirmed).toBe(false);
+	});
+
+	it("reset_delay: 0 holds the confirmed view through unlisted states, then rests on the new side", async () => {
+		const { el, root, handle, track, pointer, settle } = await mount(garage(), withState("closed"));
+		pointer("pointerdown", xFor(track, handle, 0, false));
+		await settle();
+		pointer("pointermove", xFor(track, handle, 1, false));
+		pointer("pointerup", xFor(track, handle, 1, false));
+		await settle();
+		expect(el.confirmed).toBe(true);
+
+		el.hass = withState("opening");
+		await settle();
+		expect(el.confirmed).toBe(true);
+		expect(text(el)).toBe("Opening");
+		expect(root.classList.contains("disabled")).toBe(false);
+
+		el.hass = withState("open");
+		await settle();
+		expect(el.confirmed).toBe(false);
+		expect(root.classList.contains("rtl")).toBe(true);
+		expect(text(el)).toBe("Slide to close");
+		expect(Math.round(handle.getBoundingClientRect().right)).toBe(
+			Math.round(track.getBoundingClientRect().right),
+		);
+	});
+
+	it("reset_delay: 0 resets when the entity comes back to the state it started in", async () => {
+		const { el, handle, track, pointer, settle } = await mount(garage(), withState("closed"));
+		pointer("pointerdown", xFor(track, handle, 0, false));
+		await settle();
+		pointer("pointermove", xFor(track, handle, 1, false));
+		pointer("pointerup", xFor(track, handle, 1, false));
+		await settle();
+		el.hass = withState("opening");
+		await settle();
+		el.hass = withState("closed");
+		await settle();
+		expect(el.confirmed).toBe(false);
+		expect(text(el)).toBe("Slide to open");
+	});
+
+	it("keyboard follows the state's direction", async () => {
+		const { el, key, settle, events } = await mount(garage(), withState("open"));
+		for (let i = 0; i < 10; i++) key("ArrowLeft");
+		await settle();
+		expect(el.confirmed).toBe(true);
+		expect(events[0].detail.action).toEqual(CLOSE);
 	});
 });

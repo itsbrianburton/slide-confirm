@@ -50,7 +50,8 @@
 				font-weight: 400;
 			}
 			header button,
-			header label {
+			header label,
+			header a {
 				font: inherit;
 				color: inherit;
 				background: rgba(255, 255, 255, 0.2);
@@ -105,14 +106,43 @@
 		</style>
 		<!-- Stubs for the Home Assistant elements the card uses. Defined before the card renders. -->
 		<script type="module">
-			import * as mdi from "@mdi/js";
+			// Only the icons the demo and the card's defaults use, so the bundle stays small.
+			// Add an icon here when a demo config or a card default starts using it.
+			import {
+				mdiCheck,
+				mdiCheckCircle,
+				mdiChevronLeft,
+				mdiChevronRight,
+				mdiCloseCircle,
+				mdiDoor,
+				mdiEye,
+				mdiGarage,
+				mdiGarageOpen,
+				mdiHelpCircleOutline,
+				mdiLock,
+				mdiLockOpen,
+				mdiLockOpenVariant,
+				mdiPower,
+				mdiPowerOff,
+			} from "@mdi/js";
 
-			// "mdi:lock-open-variant" -> mdi.mdiLockOpenVariant
-			const pathFor = (icon) => {
-				const name = String(icon ?? "").replace(/^mdi:/, "");
-				const key = "mdi" + name.replace(/(^|-)([a-z0-9])/g, (_, __, c) => c.toUpperCase());
-				return mdi[key] ?? mdi.mdiHelpCircleOutline;
+			const ICONS = {
+				"mdi:check": mdiCheck,
+				"mdi:check-circle": mdiCheckCircle,
+				"mdi:chevron-left": mdiChevronLeft,
+				"mdi:chevron-right": mdiChevronRight,
+				"mdi:close-circle": mdiCloseCircle,
+				"mdi:door": mdiDoor,
+				"mdi:eye": mdiEye,
+				"mdi:garage": mdiGarage,
+				"mdi:garage-open": mdiGarageOpen,
+				"mdi:lock": mdiLock,
+				"mdi:lock-open": mdiLockOpen,
+				"mdi:lock-open-variant": mdiLockOpenVariant,
+				"mdi:power": mdiPower,
+				"mdi:power-off": mdiPowerOff,
 			};
+			const pathFor = (icon) => ICONS[icon] ?? mdiHelpCircleOutline;
 
 			class HaCard extends HTMLElement {
 				constructor() {
@@ -187,6 +217,7 @@
 	<body>
 		<header>
 			<h1>Slide to Confirm – demo</h1>
+			<a class="repo" href="https://github.com/itsbrianburton/slide-confirm">GitHub</a>
 			<label><input type="checkbox" id="dark" /> Dark theme</label>
 			<button id="reset">Reset entities</button>
 		</header>
@@ -213,6 +244,8 @@
 				),
 				callService: async (domain, service, data, target) =>
 					log(`callService ${domain}.${service} ${JSON.stringify({ data, target })}`),
+				// Like HA's: the translated state, e.g. "Opening".
+				formatEntityState: (s) => s.state[0].toUpperCase() + s.state.slice(1),
 			});
 			const cards = [];
 			const pushHass = () => {
@@ -356,6 +389,71 @@
 								style: { confirmed_color: "var(--error-color)" },
 							},
 						],
+					},
+				},
+				{
+					title:
+						"One slider for both directions (states): rests left when closed, right when open, disabled while moving",
+					config: {
+						type: "custom:slide-confirm-card",
+						header: "Garage",
+						sliders: [
+							{
+								entity: "cover.garage",
+								reset_delay: 0,
+								states: {
+									closed: {
+										text_unconfirmed: "Slide to open",
+										text_confirmed: "Opening…",
+										icon_unconfirmed: "mdi:garage",
+										icon_confirmed: "mdi:garage-open",
+										confirm_action: {
+											action: "perform-action",
+											perform_action: "cover.open_cover",
+											target: { entity_id: "cover.garage" },
+										},
+									},
+									open: {
+										direction: "rtl",
+										text_unconfirmed: "Slide to close",
+										text_confirmed: "Closing…",
+										icon_unconfirmed: "mdi:garage-open",
+										icon_confirmed: "mdi:garage",
+										confirm_action: {
+											action: "perform-action",
+											perform_action: "cover.close_cover",
+											target: { entity_id: "cover.garage" },
+										},
+									},
+								},
+							},
+						],
+					},
+				},
+				{
+					title: "Themes (theme: …)",
+					config: {
+						type: "custom:slide-confirm-card",
+						sliders: [
+							"ios",
+							"minimal",
+							"glow",
+							"glass",
+							"tonal",
+							"sunrise",
+							"outline",
+							"soft",
+							"arrows",
+							"mono",
+							"hazard",
+							"aurora",
+						].map((theme) => ({
+							theme,
+							label: theme,
+							text_unconfirmed: "Slide to open",
+							text_confirmed: "Opening…",
+							confirm_action: { action: "none" },
+						})),
 					},
 				},
 				{

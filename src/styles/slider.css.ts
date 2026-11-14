@@ -152,9 +152,19 @@ export const sliderStyles = css`
 		transform: translate(var(--_x, 0px), -50%);
 		transition:
 			transform 300ms,
+			translate 300ms,
 			background-color 300ms,
 			border-color 300ms;
 		outline: none;
+	}
+
+	/* Where supported, the translate property instead, so a theme's scale (or card_mod's)
+	   never scales the offset. Older WebViews keep transform; they lack scale too. */
+	@supports (translate: 0) {
+		.handle {
+			transform: none;
+			translate: var(--_x, 0px) -50%;
+		}
 	}
 
 	.rtl .handle {
@@ -168,6 +178,13 @@ export const sliderStyles = css`
 
 	.dragging .handle,
 	.dragging .fill {
+		transition: none;
+	}
+
+	/* For one frame when a \`states:\` entry flips the direction: the handle jumps to its
+	   new rest side instead of sliding across from the old one. Beats the theme rules too. */
+	.slider.instant .handle,
+	.slider.instant .fill {
 		transition: none;
 	}
 

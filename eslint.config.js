@@ -7,7 +7,7 @@ import globals from "globals";
 
 export default tseslint.config(
 	{
-		ignores: ["dist/", "node_modules/", "img/", ".parcel-cache/"],
+		ignores: ["dist/", "dist-demo/", "node_modules/", "img/", ".parcel-cache/"],
 	},
 	js.configs.recommended,
 	...tseslint.configs.recommended,

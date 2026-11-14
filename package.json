@@ -16,6 +16,7 @@
 	"scripts": {
 		"dev": "vite build --watch",
 		"demo": "vite --open /demo/",
+		"demo:build": "vite build -c vite.demo.config.ts",
 		"build": "vite build",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"lint": "eslint .",

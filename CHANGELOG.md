@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `states`: per-entity-state text, icons, `direction` and `confirm_action`, so one slider can
+  open a garage door when it is closed and close it when it is open (#21, #12). States the map
+  does not list disable the slider and show the entity's state. A slide in progress is dropped
+  if the entity changes state.
+- `theme` (card or slider): twelve built-in looks, `ios`, `minimal`, `glow`, `glass`, `tonal`,
+  `sunrise`, `outline`, `soft`, `arrows`, `mono`, `hazard`, `aurora` (from PR #20 by
+  @dbuezas, without its snap feature).
+- The demo page is published to GitHub Pages on every push to `main`
+  ([live demo](https://itsbrianburton.github.io/slide-confirm/demo/)).
+
+### Changed
+
+- Where the browser supports it, the handle is positioned with the CSS `translate` property
+  instead of `transform`, so a `scale` from a theme or card_mod no longer shifts it. Older
+  WebViews keep `transform`.
+
 ## [Unreleased] – 2.0.0
 
 A full rewrite. v1 configs keep working; see

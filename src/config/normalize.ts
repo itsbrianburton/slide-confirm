@@ -9,9 +9,14 @@ import {
 	type CardConfigInput,
 	DEFAULTS,
 	SLIDE_DIRECTIONS,
+	type SliderTheme,
+	THEMES,
 	type SlideDirection,
 	type SliderConfig,
 	type SliderConfigInput,
+	type SliderStateConfig,
+	type SliderStateInput,
+	STATE_KEYS,
 	STYLE_KEYS,
 	type StyleConfig,
 } from "./schema";
@@ -55,8 +60,10 @@ const KNOWN_SLIDER_KEYS: ReadonlySet<string> = new Set([
 	"direction",
 	"reset_delay",
 	"haptic",
+	"theme",
 	"disabled_states",
 	"confirm_action",
+	"states",
 	"style",
 	...Object.keys(LEGACY_SLIDER_KEYS),
 ]);
@@ -89,10 +96,11 @@ export function normalizeConfig(raw: unknown): NormalizeResult {
 	}
 
 	const cardDirection = normalizeDirection(input.direction, "`direction`") ?? DEFAULTS.direction;
+	const cardTheme = normalizeOneOf(input.theme, THEMES, "`theme`");
 	const cardStyle = normalizeStyle(input.style, "`style`", warnings);
 
 	const sliders = input.sliders.map((slider, index) => {
-		const result = normalizeSlider(slider, index, cardDirection);
+		const result = normalizeSlider(slider, index, cardDirection, cardTheme);
 		warnings.push(...result.warnings);
 		legacy ||= result.legacy;
 		return result.config;
@@ -105,6 +113,7 @@ export function normalizeConfig(raw: unknown): NormalizeResult {
 	};
 	const header = optionalString(input.header, "`header`");
 	if (header !== undefined) config.header = header;
+	if (cardTheme !== undefined) config.theme = cardTheme;
 	if (cardStyle) config.style = cardStyle;
 
 	return { config, warnings, legacy };
@@ -116,6 +125,19 @@ function normalizeDirection(value: unknown, where: string): SlideDirection | und
 		throw new ConfigError(`${where} must be one of: ${SLIDE_DIRECTIONS.join(", ")}`);
 	}
 	return value;
+}
+
+/** A value from a fixed list, or undefined when unset. */
+function normalizeOneOf<T extends string>(
+	value: unknown,
+	allowed: readonly T[],
+	where: string,
+): T | undefined {
+	if (value === undefined || value === null || value === "") return undefined;
+	if (!(allowed as readonly unknown[]).includes(value)) {
+		throw new ConfigError(`${where} must be one of: ${allowed.join(", ")}`);
+	}
+	return value as T;
 }
 
 function normalizeStyle(
@@ -147,7 +169,12 @@ interface SliderResult {
 	legacy: boolean;
 }
 
-function normalizeSlider(raw: unknown, index: number, cardDirection: SlideDirection): SliderResult {
+function normalizeSlider(
+	raw: unknown,
+	index: number,
+	cardDirection: SlideDirection,
+	cardTheme?: SliderTheme,
+): SliderResult {
 	const where = `Slider ${index + 1}`;
 	if (!isObject(raw)) throw new ConfigError(`${where} must be an object`);
 	const input = raw as SliderConfigInput;
@@ -178,9 +205,16 @@ function normalizeSlider(raw: unknown, index: number, cardDirection: SlideDirect
 
 	const direction = normalizeDirection(input.direction, `${where}.direction`) ?? cardDirection;
 
-	const action = normalizeAction(input.confirm_action, `${where}.confirm_action`);
-	warnings.push(...action.warnings);
-	legacy ||= action.legacy;
+	// With `states`, the slider-level action is only a default for the entries.
+	const hasStates = input.states !== undefined && input.states !== null;
+	const action =
+		hasStates && (input.confirm_action === undefined || input.confirm_action === null)
+			? undefined
+			: normalizeAction(input.confirm_action, `${where}.confirm_action`);
+	if (action) {
+		warnings.push(...action.warnings);
+		legacy ||= action.legacy;
+	}
 
 	const config: SliderConfig = {
 		text_unconfirmed: text.text_unconfirmed ?? DEFAULTS.text_unconfirmed,
@@ -190,8 +224,12 @@ function normalizeSlider(raw: unknown, index: number, cardDirection: SlideDirect
 		direction,
 		reset_delay: normalizeResetDelay(input.reset_delay, where),
 		haptic: normalizeBoolean(input.haptic, `${where}.haptic`) ?? DEFAULTS.haptic,
-		confirm_action: action.config,
+		// Never fires: with `states` and no slider-level action, unlisted states are disabled.
+		confirm_action: action?.config ?? { action: "none" },
 	};
+
+	const theme = normalizeOneOf(input.theme, THEMES, `${where}.theme`) ?? cardTheme;
+	if (theme !== undefined) config.theme = theme;
 
 	const name = optionalString(input.name, `${where}.name`);
 	const icon = optionalString(input.icon, `${where}.icon`);
@@ -207,6 +245,16 @@ function normalizeSlider(raw: unknown, index: number, cardDirection: SlideDirect
 		config.disabled_states = disabledStates;
 		if (!entity) warnings.push(`${where}: \`disabled_states\` has no effect without \`entity\``);
 	}
+	if (hasStates) {
+		if (!entity) throw new ConfigError(`${where}.states needs \`entity\``);
+		const states = normalizeStates(input.states, where, {
+			direction,
+			text,
+			action: action?.config,
+		});
+		warnings.push(...states.warnings);
+		config.states = states.states;
+	}
 	if (config.reset_delay === 0 && !entity) {
 		warnings.push(`${where}: \`reset_delay: 0\` needs \`entity\` to know when to reset`);
 	}
@@ -215,6 +263,70 @@ function normalizeSlider(raw: unknown, index: number, cardDirection: SlideDirect
 	if (style) config.style = style;
 
 	return { config, warnings, legacy };
+}
+
+interface StateDefaults {
+	direction: SlideDirection;
+	/** Text and icons the user set on the slider itself (not the built-in defaults). */
+	text: Partial<Record<keyof SliderConfig, string>>;
+	action?: ActionConfig;
+}
+
+/**
+ * Resolves each `states:` entry against the slider's own options, so the
+ * component only has to pick one. Handle icons default per direction, so an
+ * entry that flips `direction` gets the matching chevron.
+ */
+function normalizeStates(
+	value: unknown,
+	where: string,
+	defaults: StateDefaults,
+): { states: Record<string, SliderStateConfig>; warnings: string[] } {
+	if (!isObject(value) || Object.keys(value).length === 0) {
+		throw new ConfigError(`${where}.states must map entity states to options`);
+	}
+	const warnings: string[] = [];
+	const states: Record<string, SliderStateConfig> = {};
+	for (const [state, raw] of Object.entries(value)) {
+		const at = `${where}.states.${state}`;
+		const entry = (raw ?? {}) as SliderStateInput;
+		if (!isObject(entry)) throw new ConfigError(`${at} must be an object`);
+		for (const key of Object.keys(entry)) {
+			if (!(STATE_KEYS as readonly string[]).includes(key)) {
+				warnings.push(`${at}: unknown option \`${key}\` ignored`);
+			}
+		}
+
+		const direction = normalizeDirection(entry.direction, `${at}.direction`) ?? defaults.direction;
+		let confirmAction = defaults.action;
+		if (entry.confirm_action !== undefined && entry.confirm_action !== null) {
+			const action = normalizeAction(entry.confirm_action, `${at}.confirm_action`);
+			warnings.push(...action.warnings);
+			confirmAction = action.config;
+		}
+		if (!confirmAction) {
+			throw new ConfigError(
+				`${at}.confirm_action is required (or set confirm_action on the slider)`,
+			);
+		}
+		const str = (key: keyof SliderStateConfig) => optionalString(entry[key], `${at}.${key}`);
+
+		states[state] = {
+			direction,
+			text_unconfirmed:
+				str("text_unconfirmed") ?? defaults.text.text_unconfirmed ?? DEFAULTS.text_unconfirmed,
+			text_confirmed:
+				str("text_confirmed") ?? defaults.text.text_confirmed ?? DEFAULTS.text_confirmed,
+			icon_unconfirmed:
+				str("icon_unconfirmed") ??
+				defaults.text.icon_unconfirmed ??
+				DEFAULTS.icon_unconfirmed[direction],
+			icon_confirmed:
+				str("icon_confirmed") ?? defaults.text.icon_confirmed ?? DEFAULTS.icon_confirmed,
+			confirm_action: confirmAction,
+		};
+	}
+	return { states, warnings };
 }
 
 function normalizeResetDelay(value: unknown, where: string): number {

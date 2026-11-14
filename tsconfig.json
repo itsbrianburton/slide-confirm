@@ -17,5 +17,12 @@
 		"useDefineForClassFields": false,
 		"types": ["vite/client"]
 	},
-	"include": ["src", "test", "vite.config.ts", "vitest.config.ts", "eslint.config.js"]
+	"include": [
+		"src",
+		"test",
+		"vite.config.ts",
+		"vite.demo.config.ts",
+		"vitest.config.ts",
+		"eslint.config.js"
+	]
 }
