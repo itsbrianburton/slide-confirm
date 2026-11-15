@@ -115,6 +115,8 @@ export interface SliderStateConfig {
 	icon_unconfirmed: string;
 	icon_confirmed: string;
 	confirm_action: ActionConfig;
+	/** The slider's `style` with the entry's own `style` merged over it. */
+	style?: StyleConfig;
 }
 
 /** Keys a `states:` entry may set. */
@@ -125,6 +127,7 @@ export const STATE_KEYS: readonly (keyof SliderStateConfig)[] = [
 	"icon_unconfirmed",
 	"icon_confirmed",
 	"confirm_action",
+	"style",
 ];
 
 /** Normalized slider: defaults applied, legacy keys mapped. */
@@ -140,6 +143,8 @@ export interface SliderConfig {
 	direction: SlideDirection;
 	reset_delay: number;
 	haptic: boolean;
+	/** `false` hides the icon / name / label row above the track. Absent means shown. */
+	show_header?: false;
 	/** Built-in look; absent means the classic look. */
 	theme?: SliderTheme;
 	disabled_states?: string[];
@@ -175,6 +180,7 @@ export interface SliderConfigInput {
 	direction?: SlideDirection;
 	reset_delay?: number;
 	haptic?: boolean;
+	show_header?: boolean;
 	theme?: SliderTheme;
 	disabled_states?: string[];
 	confirm_action?: ActionConfigInput;
@@ -195,6 +201,7 @@ export interface SliderStateInput {
 	icon_unconfirmed?: string;
 	icon_confirmed?: string;
 	confirm_action?: ActionConfigInput;
+	style?: StyleConfig;
 	[extra: string]: unknown;
 }
 

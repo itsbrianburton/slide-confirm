@@ -148,7 +148,14 @@ export const SLIDER_SCHEMA: HaFormSchema[] = [
 					},
 				],
 			},
-			{ name: "haptic", selector: { boolean: {} } },
+			{
+				type: "grid",
+				name: "",
+				schema: [
+					{ name: "show_header", selector: { boolean: {} } },
+					{ name: "haptic", selector: { boolean: {} } },
+				],
+			},
 			{ name: "disabled_states", selector: { text: { multiple: true } } },
 		],
 	},
@@ -170,6 +177,7 @@ const LABELS: Record<string, string> = {
 	confirm_action: "Action on confirm",
 	reset_delay: "Reset after",
 	haptic: "Haptic feedback",
+	show_header: "Show name and icon",
 	disabled_states: "Disable when entity state is",
 	track_color: "Track color",
 	handle_color: "Handle color",
@@ -279,7 +287,9 @@ export class SlideConfirmCardEditor extends LitElement implements LovelaceCardEd
 		ev.stopPropagation();
 		if (!this._config) return;
 		const sliders = [...this._sliders()];
-		sliders[index] = ev.detail.value;
+		// The form shows the default (shown) as checked; only `false` belongs in the YAML.
+		const { show_header, ...rest } = ev.detail.value;
+		sliders[index] = show_header === false ? { ...rest, show_header } : rest;
 		this._commit({ ...this._config, sliders });
 	}
 
@@ -400,7 +410,7 @@ export class SlideConfirmCardEditor extends LitElement implements LovelaceCardEd
 					<ha-form
 						class="slider-form"
 						.hass=${this.hass}
-						.data=${data}
+						.data=${{ ...data, show_header: data.show_header !== false }}
 						.schema=${SLIDER_SCHEMA}
 						.computeLabel=${computeLabel}
 						.computeHelper=${computeHelper}

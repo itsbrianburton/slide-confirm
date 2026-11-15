@@ -75,10 +75,11 @@ export class SlideConfirmCard extends LitElement {
 		let h = EST.cardPadding + (c.header ? EST.cardHeader : 0);
 		c.sliders.forEach((s, i) => {
 			const hasHeader =
-				s.name !== undefined ||
-				s.icon !== undefined ||
-				s.label !== undefined ||
-				s.entity !== undefined;
+				s.show_header !== false &&
+				(s.name !== undefined ||
+					s.icon !== undefined ||
+					s.label !== undefined ||
+					s.entity !== undefined);
 			h += EST.sliderTrack + (hasHeader ? EST.sliderHeader : 0) + (i > 0 ? EST.sliderGap : 0);
 		});
 		return h;

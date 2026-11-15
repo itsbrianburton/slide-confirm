@@ -88,6 +88,7 @@ sliders:
 | `name`             | string                        | entity friendly name                               | Text above the slider                                                                                              |
 | `icon`             | string                        | entity icon                                        | Icon before the name, e.g. `mdi:door`                                                                              |
 | `label`            | string                        |                                                    | Secondary text next to the name                                                                                    |
+| `show_header`      | boolean                       | `true`                                             | `false` hides the icon, name and label row above the track                                                         |
 | `entity`           | string                        |                                                    | Supplies the default name and icon and enables `disabled_states` and `reset_delay: 0`                              |
 | `text_unconfirmed` | string                        | `Slide to confirm`                                 | Text on the track before confirming                                                                                |
 | `text_confirmed`   | string                        | `Confirmed`                                        | Text on the track after confirming                                                                                 |
@@ -97,7 +98,7 @@ sliders:
 | `reset_delay`      | integer (ms)                  | `1500`                                             | How long the confirmed state is shown. `0` holds it until the entity changes state (needs `entity`), 30 s at most. |
 | `haptic`           | boolean                       | `false`                                            | Vibrate the device on a successful slide (companion app, or browsers with **Vibrate** enabled in the user profile) |
 | `disabled_states`  | string or list                |                                                    | Grey out and disable the slider while `entity` is in one of these states                                           |
-| `states`           | map                           |                                                    | Per-state text, icons, direction and action, so one slider can work both ways. See [`states`](#states)             |
+| `states`           | map                           |                                                    | Per-state text, icons, direction, action and style, so one slider can work both ways. See [`states`](#states)      |
 | `theme`            | [theme](#themes)              | card `theme`                                       | One of the built-in looks                                                                                          |
 | `style`            | [style object](#style-object) |                                                    | Style overrides for this slider                                                                                    |
 
@@ -128,9 +129,9 @@ The v1 shape (`action: call-service` with `service:`) and the Developer Tools sh
 
 One slider that changes with its entity: a garage door slider that opens when the door is
 closed and closes when it is open. Each key is an entity state; its value can set
-`direction`, `text_unconfirmed`, `text_confirmed`, `icon_unconfirmed`, `icon_confirmed` and
-`confirm_action`. Anything an entry leaves out comes from the slider's own options. Needs
-`entity`.
+`direction`, `text_unconfirmed`, `text_confirmed`, `icon_unconfirmed`, `icon_confirmed`,
+`confirm_action` and `style`. Anything an entry leaves out comes from the slider's own options;
+an entry's `style` is merged over the slider's. Needs `entity`.
 
 ```yaml
 type: custom:slide-confirm-card
@@ -141,6 +142,7 @@ sliders:
       closed:
         text_unconfirmed: Slide to open
         text_confirmed: Opening…
+        icon_unconfirmed: mdi:garage
         confirm_action:
           action: perform-action
           perform_action: cover.open_cover
@@ -149,6 +151,9 @@ sliders:
         direction: rtl
         text_unconfirmed: Slide to close
         text_confirmed: Closing…
+        icon_unconfirmed: mdi:garage-open
+        style:
+          track_color: var(--warning-color)
         confirm_action:
           action: perform-action
           perform_action: cover.close_cover

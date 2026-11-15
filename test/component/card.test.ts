@@ -242,4 +242,16 @@ describe("slide-confirm-card: sizing", () => {
 		expect(g1.rows).toBe(g1.min_rows);
 		expect(g2.rows as number).toBeGreaterThan(g1.rows as number);
 	});
+
+	it("leaves out the heading row for show_header: false", async () => {
+		const sliders = (show_header?: boolean) =>
+			[1, 2, 3, 4].map((n) => ({
+				name: `S${n}`,
+				show_header,
+				confirm_action: { action: "toggle" },
+			}));
+		const shown = await mountCard({ sliders: sliders() });
+		const hidden = await mountCard({ sliders: sliders(false) });
+		expect(hidden.getCardSize()).toBeLessThan(shown.getCardSize());
+	});
 });

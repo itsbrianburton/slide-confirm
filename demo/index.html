@@ -393,7 +393,7 @@
 				},
 				{
 					title:
-						"One slider for both directions (states): rests left when closed, right when open, disabled while moving",
+						"One slider for both directions (states): rests left when closed, right when open, disabled while moving. Per-state track color, show_header: false",
 					config: {
 						type: "custom:slide-confirm-card",
 						header: "Garage",
@@ -401,6 +401,7 @@
 							{
 								entity: "cover.garage",
 								reset_delay: 0,
+								show_header: false,
 								states: {
 									closed: {
 										text_unconfirmed: "Slide to open",
@@ -419,6 +420,7 @@
 										text_confirmed: "Closing…",
 										icon_unconfirmed: "mdi:garage-open",
 										icon_confirmed: "mdi:garage",
+										style: { track_color: "var(--warning-color, #ff9800)" },
 										confirm_action: {
 											action: "perform-action",
 											perform_action: "cover.close_cover",

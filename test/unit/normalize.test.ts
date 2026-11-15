@@ -403,3 +403,45 @@ describe("normalizeConfig: states", () => {
 		expect(warnings).toEqual(["Slider 1.states.closed: unknown option `haptic` ignored"]);
 	});
 });
+
+describe("normalizeConfig: show_header and per-state style", () => {
+	const open = { action: "perform-action", perform_action: "cover.open_cover" };
+
+	it("keeps show_header only when it is false", () => {
+		const { config } = normalizeConfig(
+			card([slider({ show_header: false }), slider({ show_header: true }), slider()]),
+		);
+		expect(config.sliders[0].show_header).toBe(false);
+		expect(config.sliders[1]).not.toHaveProperty("show_header");
+		expect(config.sliders[2]).not.toHaveProperty("show_header");
+		expect(() => normalizeConfig(card([slider({ show_header: "no" })]))).toThrow(
+			/Slider 1\.show_header must be true or false/,
+		);
+	});
+
+	it("merges each state's style over the slider's style", () => {
+		const { config, warnings } = normalizeConfig(
+			card([
+				{
+					entity: "cover.garage",
+					style: { track_color: "grey", handle_size: 40 },
+					states: {
+						closed: { confirm_action: open, style: { track_color: "green", bogus: 1 } },
+						open: { confirm_action: open },
+					},
+				},
+			]),
+		);
+		const states = config.sliders[0].states!;
+		expect(states.closed.style).toEqual({ track_color: "green", handle_size: 40 });
+		expect(states.open.style).toEqual({ track_color: "grey", handle_size: 40 });
+		expect(warnings).toEqual(["Slider 1.states.closed.style: unknown option `bogus` ignored"]);
+	});
+
+	it("leaves style off a state when neither the slider nor the state sets one", () => {
+		const { config } = normalizeConfig(
+			card([{ entity: "cover.garage", states: { closed: { confirm_action: open } } }]),
+		);
+		expect(config.sliders[0].states!.closed).not.toHaveProperty("style");
+	});
+});

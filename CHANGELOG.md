@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] – 2026-11-15
+
+### Added
+
+- `style` inside a `states` entry, merged over the slider's own `style`, so the track or
+  confirmed color can follow the entity's state (#21).
+- `show_header: false` hides the icon / name / label row above a slider, including the name and
+  icon it takes from `entity` (#21). Also a toggle in the visual editor.
+
 ## [2.1.0] – 2026-11-14
 
 ### Added

@@ -331,7 +331,7 @@ export class SlideConfirmSlider extends LitElement {
 		const name = c.name ?? (stateObj?.attributes.friendly_name as string | undefined);
 		const prompt = view.unlisted ? this._stateText() : view.text_unconfirmed;
 
-		const vars: Record<string, string> = styleToCustomProperties(c.style);
+		const vars: Record<string, string> = styleToCustomProperties(view.style);
 		if (this._trackWidth > 0) vars["--_track-w"] = `${this._trackWidth}px`;
 		if (this._geometry && (this._progress > 0 || this._confirmed)) {
 			vars["--_x"] = `${translateX(this._progress, this._geometry, view.direction)}px`;
@@ -346,7 +346,8 @@ export class SlideConfirmSlider extends LitElement {
 			: stateObj
 				? html`<ha-state-icon part="icon" .hass=${this.hass} .stateObj=${stateObj}></ha-state-icon>`
 				: nothing;
-		const hasHeader = icon !== nothing || name !== undefined || c.label !== undefined;
+		const hasHeader =
+			c.show_header !== false && (icon !== nothing || name !== undefined || c.label !== undefined);
 
 		return html`
 			<div

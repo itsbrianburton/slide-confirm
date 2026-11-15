@@ -60,6 +60,7 @@ const KNOWN_SLIDER_KEYS: ReadonlySet<string> = new Set([
 	"direction",
 	"reset_delay",
 	"haptic",
+	"show_header",
 	"theme",
 	"disabled_states",
 	"confirm_action",
@@ -230,6 +231,11 @@ function normalizeSlider(
 
 	const theme = normalizeOneOf(input.theme, THEMES, `${where}.theme`) ?? cardTheme;
 	if (theme !== undefined) config.theme = theme;
+	if (normalizeBoolean(input.show_header, `${where}.show_header`) === false) {
+		config.show_header = false;
+	}
+	const style = normalizeStyle(input.style, `${where}.style`, warnings);
+	if (style) config.style = style;
 
 	const name = optionalString(input.name, `${where}.name`);
 	const icon = optionalString(input.icon, `${where}.icon`);
@@ -251,6 +257,7 @@ function normalizeSlider(
 			direction,
 			text,
 			action: action?.config,
+			style,
 		});
 		warnings.push(...states.warnings);
 		config.states = states.states;
@@ -258,9 +265,6 @@ function normalizeSlider(
 	if (config.reset_delay === 0 && !entity) {
 		warnings.push(`${where}: \`reset_delay: 0\` needs \`entity\` to know when to reset`);
 	}
-
-	const style = normalizeStyle(input.style, `${where}.style`, warnings);
-	if (style) config.style = style;
 
 	return { config, warnings, legacy };
 }
@@ -270,6 +274,7 @@ interface StateDefaults {
 	/** Text and icons the user set on the slider itself (not the built-in defaults). */
 	text: Partial<Record<keyof SliderConfig, string>>;
 	action?: ActionConfig;
+	style?: StyleConfig;
 }
 
 /**
@@ -310,6 +315,8 @@ function normalizeStates(
 			);
 		}
 		const str = (key: keyof SliderStateConfig) => optionalString(entry[key], `${at}.${key}`);
+		const ownStyle = normalizeStyle(entry.style, `${at}.style`, warnings);
+		const style = defaults.style || ownStyle ? { ...defaults.style, ...ownStyle } : undefined;
 
 		states[state] = {
 			direction,
@@ -325,6 +332,7 @@ function normalizeStates(
 				str("icon_confirmed") ?? defaults.text.icon_confirmed ?? DEFAULTS.icon_confirmed,
 			confirm_action: confirmAction,
 		};
+		if (style) states[state].style = style;
 	}
 	return { states, warnings };
 }

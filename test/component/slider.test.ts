@@ -437,6 +437,21 @@ describe("slide-confirm-slider: entity awareness", () => {
 	});
 });
 
+describe("slide-confirm-slider: show_header", () => {
+	it("hides the entity's name and icon with show_header: false", async () => {
+		const hass = hassWith("lock.front_door", "locked", { friendly_name: "Front door" });
+		const shown = await mount(baseConfig({ entity: "lock.front_door" }), hass);
+		expect(shown.el.shadowRoot!.querySelector(".header")).not.toBeNull();
+
+		const hidden = await mount(
+			baseConfig({ entity: "lock.front_door", name: "Door", show_header: false }),
+			hass,
+		);
+		expect(hidden.el.shadowRoot!.querySelector(".header")).toBeNull();
+		expect(hidden.el.shadowRoot!.querySelector(".track")).not.toBeNull();
+	});
+});
+
 describe("slide-confirm-slider: config changes", () => {
 	it("returns to rest when a new config is assigned", async () => {
 		const { el, drag } = await mount(baseConfig({ reset_delay: 10_000 }));
@@ -693,5 +708,34 @@ describe("slide-confirm-slider: states", () => {
 		await settle();
 		expect(el.confirmed).toBe(true);
 		expect(events[0].detail.action).toEqual(CLOSE);
+	});
+
+	it("applies each state's style over the slider's own", async () => {
+		const config = normalizeConfig({
+			sliders: [
+				{
+					entity: "cover.garage",
+					style: { track_color: "grey", handle_size: 40 },
+					states: {
+						closed: { style: { track_color: "green" }, confirm_action: OPEN },
+						open: { direction: "rtl", style: { track_color: "red" }, confirm_action: CLOSE },
+					},
+				},
+			],
+		}).config.sliders[0];
+		const { el, root } = await mount(config, withState("closed"));
+		const prop = (name: string) => root.style.getPropertyValue(name);
+		expect(prop("--slide-confirm-track-color")).toBe("green");
+		expect(prop("--slide-confirm-handle-size")).toBe("40px");
+
+		el.hass = withState("open");
+		await el.updateComplete;
+		expect(prop("--slide-confirm-track-color")).toBe("red");
+		expect(prop("--slide-confirm-handle-size")).toBe("40px");
+
+		// An unlisted state falls back to the slider's style.
+		el.hass = withState("opening");
+		await el.updateComplete;
+		expect(prop("--slide-confirm-track-color")).toBe("grey");
 	});
 });
